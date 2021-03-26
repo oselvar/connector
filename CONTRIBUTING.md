@@ -37,4 +37,18 @@ When you think you're done, send a [pull request](https://docs.github.com/en/git
 
 We typically release all the modules at the same time.
 
-    npm run release --workspaces --no-git-tag-version
+    npm run build
+    
+    pushd packages/connector-core
+    npm version --allow-same-version 0.0.1
+    npm publish --access public
+    popd
+
+    pushd packages/connector-core
+    npm version --allow-same-version 0.0.1
+    npm publish --access public
+    popd
+
+    git push && git push --tags
+
+We'll simplify this with a script later...
