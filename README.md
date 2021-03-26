@@ -3,7 +3,7 @@
 
 # Oselvar Connector
 
-Oselvar Connector is a command-line program for generating Oselvar CSV.
+Oselvar Connector is a command-line program for generating Oselvar CSV for [oselvar.com](https://oselvar.com).
 
 ## Oselvar CSV
 
@@ -13,10 +13,10 @@ for legibility):
 
 | id     | name                                             | Todo       | Doing      | Done       |
 | ------ | ------------------------------------------------ | ---------- | ---------- | ---------- |
-| 1 | https://github.com/bigcorp/phoenix/issues/1           | 2020-01-01 | 2020-01-01 | 2020-01-09 |
-| 2 | https://github.com/bigcorp/phoenix/issues/2           | 2020-01-04 | 2020-01-08 |            |
-| 3 | https://github.com/bigcorp/phoenix/issues/3           | 2020-01-04 |            |            |
-| 3 | https://github.com/bigcorp/phoenix/issues/3           | 2020-01-05 | 2020-01-06 |            |
+| 1      | https://github.com/bigcorp/phoenix/issues/1      | 2020-01-01 | 2020-01-01 | 2020-01-09 |
+| 2      | https://github.com/bigcorp/phoenix/issues/2      | 2020-01-04 | 2020-01-08 |            |
+| 3      | https://github.com/bigcorp/phoenix/issues/3      | 2020-01-04 |            |            |
+| 3      | https://github.com/bigcorp/phoenix/issues/3      | 2020-01-05 | 2020-01-06 |            |
 
 The structure is similar to the formats pioneered by tools like [Nave](https://getnave.com/blog/loading-data-to-nave/)
 and [Actionable Agile](https://55degrees.atlassian.net/wiki/spaces/AAS/pages/701727224/Uploading+CSV+or+Excel+Data#File-Format-Requirements).
