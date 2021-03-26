@@ -1,0 +1,29 @@
+{
+  "name": "@oselvar/connector-github",
+  "version": "0.0.1",
+  "description": "Oselvar Connector for GitHub",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "repository": "https://github.com/oselvar/connector",
+  "author": "Aslak Hellesøy",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha",
+    "upgrade": "npm-check-updates --upgrade"
+  },
+  "dependencies": {
+    "@octokit/graphql": "4.6.1",
+    "@oselvar/connector-core": "0.0.1",
+    "commander": "7.1.0"
+  },
+  "devDependencies": {
+    "@octokit/rest": "18.3.5",
+    "@octokit/types": "6.12.2",
+    "@types/mocha": "^8.2.1",
+    "@types/node": "^14.14.35",
+    "mocha": "^8.3.2",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3"
+  }
+}

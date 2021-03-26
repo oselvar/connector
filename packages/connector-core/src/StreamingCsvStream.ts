@@ -15,7 +15,7 @@ export default class StreamingCsvStream<Stage extends string> extends Transform 
       readableObjectMode: false,
       writableObjectMode: true,
     })
-    this.columns = ['id', 'link', ...this.stages]
+    this.columns = ['id', 'name', ...this.stages]
   }
 
   _transform(workItem: WorkItem<Stage>, _: BufferEncoding, callback: TransformCallback) {

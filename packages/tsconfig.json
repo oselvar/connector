@@ -4,6 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@oselvar/connector-core": ["connector-core/src/index.ts"],
+      "@oselvar/connector-github": ["connector-github/src/index.ts"]
     }
   }
 }
