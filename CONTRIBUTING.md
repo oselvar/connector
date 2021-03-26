@@ -32,3 +32,9 @@ This will automatically format the code for you:
 
 Please write tests for your code. Contributions without tests will not be accepted.
 When you think you're done, send a [pull request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
+
+## Make a release
+
+We typically release all the modules at the same time.
+
+    npm run release --workspaces --no-git-tag-version
