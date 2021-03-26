@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2019", "DOM", "DOM.Iterable", "ESNext"],
+    "module": "CommonJS",
+    "jsx": "react",
+    "noUnusedLocals": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true
+  }
+}

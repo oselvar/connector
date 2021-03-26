@@ -1,0 +1,42 @@
+{
+  "name": "@oselvar/connector",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --build packages/tsconfig.build.json",
+    "test-all": "npm test --workspaces",
+    "upgrade": "npm-check-updates --upgrade",
+    "eslint": "eslint --ext ts,tsx --max-warnings 0 packages/*/src packages/*/test",
+    "eslint-fix": "eslint --ext ts,tsx --max-warnings 0 --fix packages/*/src packages/*/test",
+    "clean": "rm -rf node_modules package-lock.json packages/*/node_modules packages/*/dist"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "4.19.0",
+    "@typescript-eslint/parser": "4.19.0",
+    "eslint": "^7.22.0",
+    "eslint-config-prettier": "8.1.0",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-prettier": "3.3.1",
+    "eslint-plugin-simple-import-sort": "7.0.0",
+    "husky": "5.2.0",
+    "npm-check-updates": "11.3.0",
+    "prettier": "2.2.1",
+    "pretty-quick": "3.1.0",
+    "ts-node": "9.1.1",
+    "tsconfig-paths": "3.9.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "prettier": {
+    "trailingComma": "es5",
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 120
+  }
+}

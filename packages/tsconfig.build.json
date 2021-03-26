@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "es6",
+    "module": "CommonJS"
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "connector-core/tsconfig.build.json"
+    }
+  ]
+}
