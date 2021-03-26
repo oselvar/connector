@@ -44,7 +44,7 @@ We typically release all the modules at the same time.
     npm publish --access public
     popd
 
-    pushd packages/connector-core
+    pushd packages/connector-github
     npm version --allow-same-version 0.0.1
     npm publish --access public
     popd

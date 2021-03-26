@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Oselvar Connector for GitHub",
   "bin": {
-    "oselvar-github-issues": "./bin/oselvar-github-issues"
+    "oselvar-github": "./bin/oselvar-github"
   },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
