@@ -1,6 +1,6 @@
 {
   "name": "@oselvar/connector-github",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "description": "Oselvar Connector for GitHub",
   "bin": {
     "oselvar-github": "./bin/oselvar-github"

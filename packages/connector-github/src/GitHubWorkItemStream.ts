@@ -1,5 +1,5 @@
 import { graphql } from '@octokit/graphql'
-import {HistoricWorkItem, toWorkItem, WorkItemSnapshot} from '@oselvar/connector-core'
+import { HistoricWorkItem, toWorkItem, WorkItemSnapshot } from '@oselvar/connector-core'
 import { Readable } from 'stream'
 
 type WorkItemType = 'issues' | 'pullRequests'

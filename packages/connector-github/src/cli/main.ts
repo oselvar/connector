@@ -8,7 +8,7 @@ import GitHubWorkItemStream, { QueryParams } from '../GitHubWorkItemStream'
 const program = new Command()
 program.version(packageJson.version)
 program.option('--auth <auth>', 'Auth token')
-program.option('--repo <repo>', 'GitHub repo (owner/name)')
+program.option('--repo <repo>', 'GitHub repo (owner/name)', process.env.GITHUB_REPOSITORY)
 program.option('--type <type>', 'Either "issues" or "pullRequests"', 'issues')
 program.option('--stages <stages>', 'Comma-separated stages (optional)', 'open,closed')
 program.option('--direction <direction>', 'Either "forward" or "backward"', 'forward')
@@ -18,11 +18,11 @@ program.parse(process.argv)
 
 const [owner, name] = program.opts().repo.split('/')
 const stageMap = makeMapFromString(program.opts().stages)
-const pagesize = +program.opts().pagesize
+const pageSize = +program.opts().pagesize
 const queryParams: QueryParams = {
   owner,
   name,
-  ...(program.opts().direction == 'forward' ? { first: pagesize } : { last: pagesize }),
+  ...(program.opts().direction == 'forward' ? { first: pageSize } : { last: pageSize }),
 }
 
 pipeline(
