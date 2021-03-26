@@ -38,6 +38,5 @@
     "semi": false,
     "singleQuote": true,
     "printWidth": 120
-  },
-  "version": "0.0.2"
+  }
 }
