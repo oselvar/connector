@@ -1,6 +1,6 @@
 {
   "name": "@oselvar/connector-github",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Oselvar Connector for GitHub",
   "bin": {
     "oselvar-github": "./bin/oselvar-github"
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@octokit/graphql": "4.6.1",
-    "@oselvar/connector-core": "0.0.1",
+    "@oselvar/connector-core": "0.0.2",
     "commander": "7.1.0",
     "source-map-support": "^0.5.19"
   },
