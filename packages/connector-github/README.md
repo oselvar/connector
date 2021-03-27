@@ -1,49 +1,29 @@
-# Flow GitHub
+# Oselvar GitHub Connector
 
-Library and command line tool to generate _Flow Events CSV_ from a GitHub repo's issues.
+Library and command line tool to generate [Oselvar CSV](https://github.com/oselvar/connector/#oselvar-csv) from a GitHub repo's issues.
+
+## Installation
+
+You need Node.js and `npm` installed
 
 ## Usage
 
-    flow-jira --auth ACCESS_TOKEN --repo OWNER/NAME
+    npx -y @oselvar/connector-github --auth GITHUB_TOKEN --repo OWNER/NAME --type issues
 
-This will output Flow events as CSV:
+This will print Oselvar CSV to STDOUT
 
 ```csv
-timestamp,transition,id
-2017-09-05T16:14:08Z,open,1
-2020-01-17T10:12:07Z,close,1
-2019-09-19T14:47:25Z,open,3
-2020-01-17T10:18:12Z,close,3
-2020-01-16T23:12:23Z,open,4
-2020-01-17T10:05:52Z,close,4
-2020-11-02T19:04:11Z,open,5
+id,name,open,closed
+MDU6SXNzdWU5Njg1MTM=,https://github.com/cucumber/cucumber-js/issues/1,2011-05-28T15:51:57Z,2011-05-28T22:12:08Z
+MDU6SXNzdWU5Njg1MzY=,https://github.com/cucumber/cucumber-js/issues/2,2011-05-28T16:03:47Z,2011-05-28T16:35:58Z
+MDU6SXNzdWU5NzEzODQ=,https://github.com/cucumber/cucumber-js/issues/3,2011-05-29T20:34:45Z,2011-07-17T19:24:18Z
+MDU6SXNzdWU5ODY0NjM=,https://github.com/cucumber/cucumber-js/issues/4,2011-06-01T19:37:03Z,2015-11-16T21:42:57Z
 ```
 
-This csv can be sorted with `sort`
+For more details:
 
-### Local CFD
+    npx -y @oselvar/connector-github --help
 
-To try out the CFD locally:
+## Publishing to Oselvar.com
 
-You can pipe the output to `flow-markings` and then to `flow-cfd`.
-
-Or more conveniently, just specify `--flow-markings` or `--flow-cfd`
-
-### Ideas
-
-Fetch labels and commits
-
-### Graph notes
-
-- Transforms issues to work items.
-- See https://55degrees.atlassian.net/wiki/spaces/AAS/pages/701727224/Uploading+CSV+or+Excel+Data#File-Format-Requirements
--
-- To determine the order of steps, look into markov chains
-- https://setosa.io/blog/2014/07/26/markov-chains/index.html
-- https://en.wikipedia.org/wiki/Markov_chain#Queueing_theory
-- https://github.com/mogoh/ts-markov
-- https://introcs.cs.princeton.edu/java/98simulation/MarkovChain.java.html
-- https://rosettacode.org/wiki/Markov_chain_text_generator#Java
--
-- Shortest path - see Bellman-Ford or Dijsktra
-- - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5020038/
+See the [setup](https://oselvar.com/setup) guide.
