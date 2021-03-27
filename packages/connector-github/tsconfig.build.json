@@ -1,5 +1,5 @@
 {
-  "extends": "../../../../aslakhellesoy/flow/packages/tsconfig.build.json",
+  "extends": "../tsconfig.build.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "dist"
