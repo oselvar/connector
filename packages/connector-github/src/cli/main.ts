@@ -7,9 +7,9 @@ import GitHubWorkItemStream, { QueryParams } from '../GitHubWorkItemStream'
 
 const program = new Command()
 program.version(packageJson.version)
-program.option('--auth <auth>', 'Auth token')
+program.option('--auth <auth>', 'Auth token', process.env.GITHUB_TOKEN)
 program.option('--repo <repo>', 'GitHub repo (owner/name)', process.env.GITHUB_REPOSITORY)
-program.option('--type <type>', 'Either "issues" or "pullRequests"', 'issues')
+program.option('--type <type>', 'Either "issues" or "pullRequests"', 'pullRequests')
 program.option('--stages <stages>', 'Comma-separated stages (optional)', 'open,closed')
 program.option('--direction <direction>', 'Either "forward" or "backward"', 'forward')
 program.option('--pages <pages>', 'How many pages of work items to load')
