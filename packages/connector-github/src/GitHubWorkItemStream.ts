@@ -64,7 +64,7 @@ function makeQuery(workItemType: WorkItemType) {
         url
         createdAt
         closedAt
-        timelineItems(itemTypes: [REOPENED_EVENT, CLOSED_EVENT, ADDED_TO_PROJECT_EVENT, MOVED_COLUMNS_IN_PROJECT_EVENT, LABELED_EVENT], first: 100) {
+        timelineItems(itemTypes: [REOPENED_EVENT, CLOSED_EVENT, ADDED_TO_PROJECT_EVENT, MOVED_COLUMNS_IN_PROJECT_EVENT, LABELED_EVENT, ISSUE_COMMENT], first: 100) {
           nodes {
             __typename
             ... on ReopenedEvent {
@@ -82,6 +82,9 @@ function makeQuery(workItemType: WorkItemType) {
               createdAt
             }
             ... on LabeledEvent {
+              createdAt
+            }
+            ... on IssueComment {
               createdAt
             }
           }
@@ -124,6 +127,11 @@ type LabeledEvent = Readonly<{
   createdAt: string
 }>
 
+type IssueComment = Readonly<{
+  __typename: 'IssueComment'
+  createdAt: string
+}>
+
 type GitHubWorkItems = {
   nodes: readonly GitHubWorkItem[]
   pageInfo: {
@@ -145,7 +153,14 @@ type GitHubWorkItem = Readonly<{
   createdAt: string
   closedAt: string
   timelineItems: {
-    nodes: readonly (ReopenedEvent | ClosedEvent | AddedToProjectEvent | MovedColumnsInProjectEvent | LabeledEvent)[]
+    nodes: readonly (
+      | ReopenedEvent
+      | ClosedEvent
+      | AddedToProjectEvent
+      | MovedColumnsInProjectEvent
+      | LabeledEvent
+      | IssueComment
+    )[]
   }
 }>
 
@@ -189,6 +204,12 @@ function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<
         snapshots.push({
           timestamp: new Date(event.createdAt),
           stage: 'labeled',
+        })
+        break
+      case 'IssueComment':
+        snapshots.push({
+          timestamp: new Date(event.createdAt),
+          stage: 'commented',
         })
         break
       default:

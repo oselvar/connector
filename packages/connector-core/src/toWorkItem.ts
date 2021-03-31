@@ -11,6 +11,7 @@ export function toWorkItem<MappedStage extends string, OriginalStage extends str
     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
 
   const stageTimestamps: StageTimestamps<MappedStage> = {}
+  const stages = [...stageMap.keys()] // They will be ordered
   for (const { timestamp, stage } of timeSortedSnapshots) {
     // @ts-ignore
     const mappedStage = stageMap.size === 0 ? (stage as MappedStage) : stageMap.get(stage)
@@ -18,7 +19,8 @@ export function toWorkItem<MappedStage extends string, OriginalStage extends str
       // Ignore this stage - it's a stage we're not interested in for this workflow
       continue
     }
-    if (!stageTimestamps[mappedStage]) {
+    const overwrite = stage !== stages[0]
+    if (overwrite || stageTimestamps[mappedStage] === undefined) {
       stageTimestamps[mappedStage] = timestamp
     }
   }

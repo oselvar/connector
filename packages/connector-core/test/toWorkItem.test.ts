@@ -56,6 +56,34 @@ describe('toWorkItem', () => {
     })
   })
 
+  it('overwrites backwards move except for arrival stage', () => {
+    const stages = <const>['a', 'b', 'c', 'd']
+    type Stage = typeof stages[number]
+
+    const historicWorkItem: HistoricWorkItem<Stage> = {
+      id: 'id',
+      name: 'name',
+      snapshots: [
+        { timestamp: new Date('2001'), stage: 'a' },
+        { timestamp: new Date('2002'), stage: 'b' },
+        { timestamp: new Date('2003'), stage: 'c' },
+        { timestamp: new Date('2004'), stage: 'b' },
+        { timestamp: new Date('2005'), stage: 'a' },
+      ],
+    }
+
+    const workItem: WorkItem<Stage> = toWorkItem(historicWorkItem, makeMapFromString('a,b,c,d'))!
+
+    const expected: WorkItem<Stage> = {
+      id: 'id',
+      name: 'name',
+      a: new Date('2001'),
+      b: new Date('2004'),
+      c: new Date('2003'),
+    }
+    assert.deepStrictEqual(workItem, expected)
+  })
+
   it('maps stages to new stages which is useful for poorly named stages and historic workflow changes', () => {
     const originalStages = <const>['a', 'b', 'c', 'd']
     type OriginalStage = typeof originalStages[number]
@@ -83,7 +111,7 @@ describe('toWorkItem', () => {
       id: 'id',
       name: 'name',
       todo: new Date('2001'),
-      doing: new Date('2002'),
+      doing: new Date('2003'),
       done: new Date('2004'),
     }
     assert.deepStrictEqual(workItem, expected)
