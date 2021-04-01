@@ -2,14 +2,16 @@
 
 # Oselvar Connector
 
-Oselvar Connector is a command-line program that extracts metrics as *Oselvar CSV* from issue trackers.
+Oselvar Connector is a command-line program that extracts metrics from issue trackers.
 
 These metrics can be used to display various charts, such as *cycle time scatter plots* and
 *cumulative flow diagrams* on [oselvar.com](https://oselvar.com).
 
+The metrics are represented as *Oselvar CSV*.
+
 ## Oselvar CSV
 
-Oselvar CSV is a data format where each row represents the history of a *work item* (typically an issue or a pull request).
+Oselvar CSV is a data format where each row represents the history of a *work item* (for example a GitHub issue or pull request).
 The first two columns (`id` and `name`) are mandatory. The following columns represent stages in the workflow, and
 when the work item entered a particular stage.
 
