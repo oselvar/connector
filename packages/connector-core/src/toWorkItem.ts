@@ -19,7 +19,7 @@ export function toWorkItem<MappedStage extends string, OriginalStage extends str
       // Ignore this stage - it's a stage we're not interested in for this workflow
       continue
     }
-    const overwrite = stage !== stages[0]
+    const overwrite = stage === stages[stages.length - 1] // We only allow overwriting the last stage
     if (overwrite || stageTimestamps[mappedStage] === undefined) {
       stageTimestamps[mappedStage] = timestamp
     }

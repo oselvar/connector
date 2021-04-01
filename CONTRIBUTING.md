@@ -40,12 +40,13 @@ We typically release all the modules at the same time.
     npm run build
     
     pushd packages/connector-core
-    npm version --allow-same-version 0.0.1
+    npm version --allow-same-version CONNECTOR_CORE_VERSION
     npm publish --access public
     popd
 
+    # Update package.json with CONNECTOR_CORE_VERSION
     pushd packages/connector-github
-    npm version --allow-same-version 0.0.1
+    npm version --allow-same-version CONNECTOR_GITHUB_VERSION
     npm publish --access public
     popd
 

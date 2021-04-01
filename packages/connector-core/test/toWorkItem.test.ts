@@ -78,7 +78,7 @@ describe('toWorkItem', () => {
       id: 'id',
       name: 'name',
       a: new Date('2001'),
-      b: new Date('2004'),
+      b: new Date('2002'),
       c: new Date('2003'),
     }
     assert.deepStrictEqual(workItem, expected)
@@ -111,7 +111,7 @@ describe('toWorkItem', () => {
       id: 'id',
       name: 'name',
       todo: new Date('2001'),
-      doing: new Date('2003'),
+      doing: new Date('2002'),
       done: new Date('2004'),
     }
     assert.deepStrictEqual(workItem, expected)
