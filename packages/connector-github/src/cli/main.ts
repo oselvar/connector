@@ -7,13 +7,17 @@ import GitHubWorkItemStream, { QueryParams } from '../GitHubWorkItemStream'
 
 const program = new Command()
 program.version(packageJson.version)
-program.option('--auth <auth>', 'Auth token', process.env.GITHUB_TOKEN)
+program.option(
+  '--auth <auth>',
+  'GitHub authentication token. Can also be pisked up from $GITHUB_TOKEN',
+  process.env.GITHUB_TOKEN
+)
 program.option('--repo <repo>', 'GitHub repo (owner/name)', process.env.GITHUB_REPOSITORY)
-program.option('--type <type>', 'Either "issues" or "pullRequests"', 'pullRequests')
-program.option('--stages <stages>', 'Comma-separated stages (optional)', 'open,labeled,commented,closed')
-program.option('--direction <direction>', 'Either "forward" or "backward"', 'forward')
-program.option('--pages <pages>', 'How many pages of work items to load')
-program.option('--pagesize <pagesize>', 'Number of issues/pull requests per page', '100')
+program.option('--type <type>', 'either "issues" or "pullRequests"', 'pullRequests')
+program.option('--stages <stages>', 'comma-separated stages (optional)', 'open,labeled,commented,closed')
+program.option('--direction <direction>', 'either "forward" or "backward"', 'forward')
+program.option('--pages <pages>', 'how many pages of work items to load')
+program.option('--pagesize <pagesize>', 'number of issues/pull requests per page', '100')
 program.parse(process.argv)
 
 const [owner, name] = program.opts().repo.split('/')
