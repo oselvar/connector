@@ -17,7 +17,7 @@ when the work item entered a particular stage.
 
 Here is an example (rendered as a table for legibility):
 
-| id     | name                                             | open       | labelled   | commented  | closed     |
+| id     | name                                             | open       | labeled    | commented  | closed     |
 | ------ | ------------------------------------------------ | ---------- | ---------- | ---------- | ---------- |
 | 1      | https://github.com/bigcorp/phoenix/issues/1      | 2020-01-01 | 2020-01-02 | 2020-01-04 |            |
 | 2      | https://github.com/bigcorp/phoenix/issues/2      | 2020-01-04 | 2020-01-08 |            | 2020-01-09 |
