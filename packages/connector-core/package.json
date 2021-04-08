@@ -12,7 +12,7 @@
     "upgrade": "npm-check-updates --upgrade"
   },
   "dependencies": {
-    "@types/node": "14.14.36",
+    "@types/node": "14.14.37",
     "@types/d3-dsv": "2.0.1",
     "@types/d3-time": "2.0.0",
     "d3-dsv": "2.0.0",
