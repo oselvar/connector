@@ -12,6 +12,10 @@ You need `node` and `npm` version `7.7.0` or later. If you don't have it, upgrad
 
     npm install
 
+## Upgrade dependencies
+
+    npm run upgrade && npm run upgrade --workspaces && npm run clean && npm install
+
 ## Run tests
 
     npm test --workspaces

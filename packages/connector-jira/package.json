@@ -1,9 +1,9 @@
 {
-  "name": "@oselvar/connector-github",
+  "name": "@oselvar/connector-jira",
   "version": "0.0.8",
-  "description": "Oselvar Connector for GitHub",
+  "description": "Oselvar Connector for JIRA",
   "bin": {
-    "oselvar-github": "./bin/oselvar-github"
+    "oselvar-github": "./bin/oselvar-jira"
   },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -15,9 +15,9 @@
     "upgrade": "npm-check-updates --upgrade"
   },
   "dependencies": {
-    "@octokit/graphql": "4.6.1",
     "@oselvar/connector-core": "0.0.4",
     "commander": "7.2.0",
+    "node-fetch": "^2.6.1",
     "source-map-support": "^0.5.19"
   },
   "devDependencies": {
