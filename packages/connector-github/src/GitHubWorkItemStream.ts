@@ -70,15 +70,9 @@ function makeQuery(workItemType: WorkItemType) {
         url
         createdAt
         closedAt
-        timelineItems(itemTypes: [REOPENED_EVENT, CLOSED_EVENT, ADDED_TO_PROJECT_EVENT, MOVED_COLUMNS_IN_PROJECT_EVENT, LABELED_EVENT, ISSUE_COMMENT], first: 100) {
+        timelineItems(itemTypes: [ADDED_TO_PROJECT_EVENT, MOVED_COLUMNS_IN_PROJECT_EVENT, LABELED_EVENT, ISSUE_COMMENT], first: 100) {
           nodes {
             __typename
-            ... on ReopenedEvent {
-              createdAt
-            }
-            ... on ClosedEvent {
-              createdAt
-            }
             ... on AddedToProjectEvent {
               projectColumnName
               createdAt
@@ -112,16 +106,6 @@ function makeQuery(workItemType: WorkItemType) {
 }
 `
 }
-
-type ReopenedEvent = Readonly<{
-  __typename: 'ReopenedEvent'
-  createdAt: string
-}>
-
-type ClosedEvent = Readonly<{
-  __typename: 'ClosedEvent'
-  createdAt: string
-}>
 
 type AddedToProjectEvent = Readonly<{
   __typename: 'AddedToProjectEvent'
@@ -167,14 +151,7 @@ type GitHubWorkItem = Readonly<{
   createdAt: string
   closedAt: string
   timelineItems: {
-    nodes: readonly (
-      | ReopenedEvent
-      | ClosedEvent
-      | AddedToProjectEvent
-      | MovedColumnsInProjectEvent
-      | LabeledEvent
-      | IssueComment
-    )[]
+    nodes: readonly (AddedToProjectEvent | MovedColumnsInProjectEvent | LabeledEvent | IssueComment)[]
   }
 }>
 
@@ -191,29 +168,13 @@ function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<
     timestamp: new Date(gitHubWorkItem.createdAt),
     stage: 'open',
   })
-  // Very old GitHub issues (such as https://github.com/rails/rails/issues/1)
-  // do not have events (presumably events were added to GitHub after the issue was closed).
-  // For this reason, we create the closedAt event this way *as well as* based on the ClosedEvent
-  if (gitHubWorkItem.closedAt) {
-    snapshots.push({
-      timestamp: new Date(gitHubWorkItem.closedAt),
-      stage: 'closed',
-    })
-  }
+  // For "labeled" and "commented" events, we only want to record the first one, and ignore the following ones.
+  // This is because we use them to measure the cycle time from a work item was opened until it was *first*
+  // commented on or labeled (and ignore later comments and labels)/
+  let pushLabeled = true
+  let pushCommented = true
   for (const event of gitHubWorkItem.timelineItems.nodes) {
     switch (event.__typename) {
-      case 'ClosedEvent':
-        snapshots.push({
-          timestamp: new Date(event.createdAt),
-          stage: 'closed',
-        })
-        break
-      case 'ReopenedEvent':
-        snapshots.push({
-          timestamp: new Date(event.createdAt),
-          stage: 'open',
-        })
-        break
       case 'AddedToProjectEvent':
       case 'MovedColumnsInProjectEvent':
         snapshots.push({
@@ -222,20 +183,32 @@ function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<
         })
         break
       case 'LabeledEvent':
-        snapshots.push({
-          timestamp: new Date(event.createdAt),
-          stage: 'labeled',
-        })
+        if (pushLabeled) {
+          snapshots.push({
+            timestamp: new Date(event.createdAt),
+            stage: 'labeled',
+          })
+          pushLabeled = false
+        }
         break
       case 'IssueComment':
-        snapshots.push({
-          timestamp: new Date(event.createdAt),
-          stage: 'commented',
-        })
+        if (pushCommented) {
+          snapshots.push({
+            timestamp: new Date(event.createdAt),
+            stage: 'commented',
+          })
+          pushCommented = false
+        }
         break
       default:
         throw new Error(`Unexpected event type: ${JSON.stringify(event)}`)
     }
+  }
+  if (gitHubWorkItem.closedAt) {
+    snapshots.push({
+      timestamp: new Date(gitHubWorkItem.closedAt),
+      stage: 'closed',
+    })
   }
   return {
     id: gitHubWorkItem.id,
