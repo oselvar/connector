@@ -1,6 +1,6 @@
 {
   "name": "@oselvar/connector-github",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "Oselvar Connector for GitHub",
   "bin": {
     "oselvar-github": "./bin/oselvar-github"
@@ -16,16 +16,16 @@
   },
   "dependencies": {
     "@octokit/graphql": "4.6.1",
-    "@oselvar/connector-core": "0.0.4",
+    "@oselvar/connector-core": "0.1.0",
     "commander": "7.2.0",
     "source-map-support": "^0.5.19"
   },
   "devDependencies": {
     "@octokit/types": "6.13.1",
-    "@types/mocha": "^8.2.2",
-    "@types/node": "^14.14.41",
-    "mocha": "^8.3.2",
-    "ts-node": "^9.1.1",
-    "typescript": "^4.2.4"
+    "@types/mocha": "8.2.2",
+    "@types/node": "14.14.41",
+    "mocha": "8.3.2",
+    "ts-node": "9.1.1",
+    "typescript": "4.2.4"
   }
 }

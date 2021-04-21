@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "build": "tsc --build packages/tsconfig.build.json",
-    "test-all": "npm test --workspaces",
     "upgrade": "npm-check-updates --upgrade",
     "eslint": "eslint --ext ts,tsx --max-warnings 0 packages/*/src packages/*/test",
     "eslint-fix": "eslint --ext ts,tsx --max-warnings 0 --fix packages/*/src packages/*/test",
