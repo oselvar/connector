@@ -18,7 +18,8 @@ export type QueryParams = Readonly<{
  */
 export default class GitHubWorkItemStream extends Readable {
   private readonly query: string
-  private pages = 0
+  private pageCount = 0
+  private rateLimit: GitHubRateLimit
 
   constructor(
     private readonly workItemType: WorkItemType,
@@ -32,26 +33,31 @@ export default class GitHubWorkItemStream extends Readable {
   }
 
   _read() {
-    fetchGitHubWorkItemsPage(this.query, this.auth, this.queryParams)
-      .then((gitHubWorkItemsPage) => {
-        const workItems = gitHubWorkItemsPage.repository[this.workItemType]
-        for (const issue of workItems.nodes) {
-          const historicWorkItem = makeHistoricWorkItem(issue)
-          const workItem = toWorkItem(historicWorkItem, this.stageMap)
-          this.push(workItem)
-        }
-        this.pages++
-        if (this.maxPages !== undefined && this.pages >= this.maxPages) {
-          this.push(null)
-        } else if (this.queryParams.first && workItems.pageInfo.endCursor) {
-          this.queryParams = { ...this.queryParams, ...{ afterCursor: workItems.pageInfo.endCursor } }
-        } else if (this.queryParams.last && workItems.pageInfo.startCursor) {
-          this.queryParams = { ...this.queryParams, ...{ beforeCursor: workItems.pageInfo.startCursor } }
-        } else {
-          this.push(null)
-        }
-      })
-      .catch((err) => this.emit('error', err))
+    this.fetchMore().catch((err) => this.emit('error', err))
+  }
+
+  private async fetchMore() {
+    if (this.rateLimit) {
+      console.error(new Date(), this.rateLimit)
+    }
+    const gitHubWorkItemsPage = await fetchGitHubWorkItemsPage(this.query, this.auth, this.queryParams)
+    this.rateLimit = gitHubWorkItemsPage.rateLimit
+    const workItems = gitHubWorkItemsPage.repository[this.workItemType]
+    for (const issue of workItems.nodes) {
+      const historicWorkItem = makeHistoricWorkItem(issue)
+      const workItem = toWorkItem(historicWorkItem, this.stageMap)
+      this.push(workItem)
+    }
+    this.pageCount++
+    if (this.maxPages !== undefined && this.pageCount >= this.maxPages) {
+      this.push(null)
+    } else if (this.queryParams.first && workItems.pageInfo.endCursor) {
+      this.queryParams = { ...this.queryParams, ...{ afterCursor: workItems.pageInfo.endCursor } }
+    } else if (this.queryParams.last && workItems.pageInfo.startCursor) {
+      this.queryParams = { ...this.queryParams, ...{ beforeCursor: workItems.pageInfo.startCursor } }
+    } else {
+      this.push(null)
+    }
   }
 }
 
@@ -95,6 +101,13 @@ function makeQuery(workItemType: WorkItemType) {
         endCursor
       }
     }
+  }
+  
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
   }
 }
 `
@@ -145,6 +158,7 @@ type GitHubWorkItemsPage = Readonly<{
     issues: GitHubWorkItems
     pullRequests: GitHubWorkItems
   }
+  rateLimit: GitHubRateLimit
 }>
 
 type GitHubWorkItem = Readonly<{
@@ -163,6 +177,13 @@ type GitHubWorkItem = Readonly<{
     )[]
   }
 }>
+
+type GitHubRateLimit = {
+  limit: number
+  cost: number
+  remaining: number
+  resetAt: string
+}
 
 function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<string> {
   const snapshots: WorkItemSnapshot<string>[] = []
