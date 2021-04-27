@@ -4,10 +4,17 @@
  * This type is serialisable to CSV, which is also Oselvar's basic data format for connecting
  * to external sources.
  */
-export type WorkItem<Stage extends string> = {
-  id: string
-  name?: string
-} & StageTimestamps<Stage>
+export type WorkItem<Stage extends string> = Readonly<
+  {
+    id: string
+    name?: string
+  } & StageTimestamps<Stage> &
+    Labels
+>
+
+type Labels = Readonly<{
+  labels: string
+}>
 
 export type StageTimestamps<Stage extends string> = Partial<Record<Stage, Date | undefined | null>>
 
@@ -37,13 +44,14 @@ export type StageTimestamps<Stage extends string> = Partial<Record<Stage, Date |
  *
  * Many systems provide a list of events for each work items.
  */
-export type HistoricWorkItem<Stage extends string> = {
+export type HistoricWorkItem<Stage extends string> = Readonly<{
   id: string
   name: string
+  labels: readonly string[]
   snapshots: readonly WorkItemSnapshot<Stage>[]
-}
+}>
 
-export type WorkItemSnapshot<Stage extends string> = {
+export type WorkItemSnapshot<Stage extends string> = Readonly<{
   timestamp: Date
   stage: Stage
-}
+}>

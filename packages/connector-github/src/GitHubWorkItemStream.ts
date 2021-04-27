@@ -61,6 +61,8 @@ export default class GitHubWorkItemStream extends Readable {
   }
 }
 
+// TODO: Look at https://github.com/chaoss/grimoirelab-perceval/blob/master/perceval/backends/core/githubql.py
+// to get some ideas.
 function makeQuery(workItemType: WorkItemType) {
   return `query ($owner: String!, $name: String!, $beforeCursor: String, $afterCursor: String, $first: Int, $last: Int) {
   repository(owner: $owner, name: $name) {
@@ -68,6 +70,16 @@ function makeQuery(workItemType: WorkItemType) {
       nodes {
         id
         url
+        author {
+          login
+        }
+        labels(first: 10) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
         createdAt
         closedAt
         timelineItems(itemTypes: [ADDED_TO_PROJECT_EVENT, MOVED_COLUMNS_IN_PROJECT_EVENT, LABELED_EVENT, ISSUE_COMMENT], first: 100) {
@@ -129,19 +141,19 @@ type IssueComment = Readonly<{
   createdAt: string
 }>
 
-type GitHubWorkItems = {
+type GitHubWorkItems = Readonly<{
   nodes: readonly GitHubWorkItem[]
   pageInfo: {
     endCursor?: string
     startCursor?: string
   }
-}
+}>
 
 type GitHubWorkItemsPage = Readonly<{
-  repository: {
+  repository: Readonly<{
     issues: GitHubWorkItems
     pullRequests: GitHubWorkItems
-  }
+  }>
   rateLimit: GitHubRateLimit
 }>
 
@@ -150,17 +162,27 @@ type GitHubWorkItem = Readonly<{
   url: string
   createdAt: string
   closedAt: string
-  timelineItems: {
+  author: Readonly<{
+    login: string
+  }>
+  labels: Readonly<{
+    edges: readonly Readonly<{
+      node: Readonly<{
+        name: string
+      }>
+    }>[]
+  }>
+  timelineItems: Readonly<{
     nodes: readonly (AddedToProjectEvent | MovedColumnsInProjectEvent | LabeledEvent | IssueComment)[]
-  }
+  }>
 }>
 
-type GitHubRateLimit = {
+type GitHubRateLimit = Readonly<{
   limit: number
   cost: number
   remaining: number
   resetAt: string
-}
+}>
 
 function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<string> {
   const snapshots: WorkItemSnapshot<string>[] = []
@@ -218,6 +240,7 @@ function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<
     id: gitHubWorkItem.id,
     name: gitHubWorkItem.url,
     snapshots,
+    labels: gitHubWorkItem.labels.edges.map((edge) => edge.node.name),
   }
 }
 

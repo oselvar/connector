@@ -14,7 +14,7 @@ program.option(
 )
 program.option('--repo <repo>', 'GitHub repo (owner/name)', process.env.GITHUB_REPOSITORY)
 program.option('--type <type>', 'either "issues" or "pullRequests"', 'pullRequests')
-program.option('--stages <stages>', 'comma-separated stages (optional)', 'open,labeled,commented,closed')
+program.option('--stages <stages>', 'comma-separated stages (optional)', 'open,labeled,commented,closed,labels')
 program.option('--direction <direction>', 'either "forward" or "backward"', 'forward')
 program.option('--pages <pages>', 'how many pages of work items to load')
 program.option('--pagesize <pagesize>', 'number of issues/pull requests per page', '100')

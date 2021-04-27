@@ -4,7 +4,7 @@ export function toWorkItem<MappedStage extends string, OriginalStage extends str
   historicWorkItem: HistoricWorkItem<OriginalStage>,
   stageMap: Map<OriginalStage, MappedStage>
 ): WorkItem<MappedStage> | null {
-  const { id, name } = historicWorkItem
+  const { id, name, labels } = historicWorkItem
 
   const timeSortedSnapshots = historicWorkItem.snapshots
     .slice()
@@ -25,5 +25,6 @@ export function toWorkItem<MappedStage extends string, OriginalStage extends str
     }
   }
   if (Object.keys(stageTimestamps).length === 0) return null
-  return { ...{ id, name }, ...stageTimestamps }
+  const labelsString = `[${labels.join('|')}]`
+  return { ...{ id, name }, ...stageTimestamps, ...{ labels: labelsString } }
 }

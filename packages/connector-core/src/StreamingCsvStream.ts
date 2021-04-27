@@ -24,7 +24,7 @@ export default class StreamingCsvStream<Stage extends string> extends Transform 
       this.headerPrinted = true
     }
     const row = this.columns.map((column) => workItem[column])
-    this.push(csvFormatRow((row as unknown) as string[]) + '\n')
+    this.push(csvFormatRow(row) + '\n')
     callback(null)
   }
 }

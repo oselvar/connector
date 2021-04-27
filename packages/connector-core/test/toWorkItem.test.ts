@@ -11,6 +11,7 @@ describe('toWorkItem', () => {
         { timestamp: new Date('2001'), stage: 'Backlog' },
         { timestamp: new Date('2002'), stage: 'Analysis' },
       ],
+      labels: [],
     }
 
     const workItem = toWorkItem(historicWorkItem, makeMapFromString('Next,Development'))
@@ -25,6 +26,7 @@ describe('toWorkItem', () => {
         { timestamp: new Date('2001'), stage: 'Backlog' },
         { timestamp: new Date('2002'), stage: 'Analysis' },
       ],
+      labels: [],
     }
 
     const workItem = toWorkItem(historicWorkItem, new Map())
@@ -33,6 +35,7 @@ describe('toWorkItem', () => {
       name: 'name',
       Backlog: new Date('2001'),
       Analysis: new Date('2002'),
+      labels: [],
     })
   })
 
@@ -45,6 +48,7 @@ describe('toWorkItem', () => {
         { timestamp: new Date('2002'), stage: 'Development' },
         { timestamp: new Date('2003'), stage: 'Next' },
       ],
+      labels: [],
     }
 
     const workItem = toWorkItem(historicWorkItem, makeMapFromString('Next,Development'))
@@ -70,6 +74,7 @@ describe('toWorkItem', () => {
         { timestamp: new Date('2004'), stage: 'b' },
         { timestamp: new Date('2005'), stage: 'a' },
       ],
+      labels: [],
     }
 
     const workItem: WorkItem<Stage> = toWorkItem(historicWorkItem, makeMapFromString('a,b,c,d'))!
@@ -80,6 +85,7 @@ describe('toWorkItem', () => {
       a: new Date('2001'),
       b: new Date('2002'),
       c: new Date('2003'),
+      labels: '',
     }
     assert.deepStrictEqual(workItem, expected)
   })
@@ -100,6 +106,7 @@ describe('toWorkItem', () => {
         { timestamp: new Date('2003'), stage: 'c' },
         { timestamp: new Date('2004'), stage: 'd' },
       ],
+      labels: [],
     }
 
     const workItem: WorkItem<MappedStage> = toWorkItem(
@@ -113,6 +120,7 @@ describe('toWorkItem', () => {
       todo: new Date('2001'),
       doing: new Date('2002'),
       done: new Date('2004'),
+      labels: '',
     }
     assert.deepStrictEqual(workItem, expected)
   })
