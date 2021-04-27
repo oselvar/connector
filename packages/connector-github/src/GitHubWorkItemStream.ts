@@ -173,7 +173,10 @@ function makeHistoricWorkItem(gitHubWorkItem: GitHubWorkItem): HistoricWorkItem<
   // commented on or labeled (and ignore later comments and labels)/
   let pushLabeled = true
   let pushCommented = true
-  const sortedNodes = gitHubWorkItem.timelineItems.nodes.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const sortedNodes = gitHubWorkItem.timelineItems.nodes
+    .slice()
+    .filter((node) => node)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   for (const event of sortedNodes) {
     switch (event.__typename) {
       case 'AddedToProjectEvent':
