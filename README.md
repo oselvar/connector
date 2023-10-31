@@ -5,7 +5,7 @@
 Oselvar Connector is a command-line program that extracts metrics from issue trackers.
 
 These metrics can be used to display various charts, such as *cycle time scatter plots* and
-*cumulative flow diagrams* on [oselvar.com](https://oselvar.com).
+*cumulative flow diagrams* on [oselvar.com](https://www.oselvar.com).
 
 The metrics are represented as *Oselvar CSV*.
 
@@ -48,10 +48,9 @@ For more options:
 The recommended way to run Oselvar Connector is to set up a GitHub Action that updates `.oselvar/issues.csv` and
 `.oselvar/pullRequests.csv` at [regular intervals](https://simonwillison.net/2020/Oct/9/git-scraping/).
 
-Head over to https://oselvar.com to set up a GitHub action for your own project.
+Head over to https://www.oselvar.com to set up a GitHub action for your own project.
 
 ## Credits
 
 The Oselvar CSV format is inspired by the formats supported by tools like [Nave](https://getnave.com/blog/loading-data-to-nave/)
 and [Actionable Agile](https://55degrees.atlassian.net/wiki/spaces/AAS/pages/701727224/Uploading+CSV+or+Excel+Data#File-Format-Requirements).
-

@@ -1,4 +1,4 @@
-# Constributing to Oselvar Connector
+# Contributing to Oselvar Connector
 
 Before you contribute, make sure you can build the code and run the tests.
 
