@@ -1,7 +1,7 @@
+import { Transform, type TransformCallback } from 'node:stream'
 import { csvFormat } from 'd3-dsv'
-import { Transform, TransformCallback } from 'stream'
 
-import { WorkItem } from '../src'
+import type { WorkItem } from '../src'
 
 /**
  * Outputs Flow CSV from {@link HistoricWorkItem} stream.

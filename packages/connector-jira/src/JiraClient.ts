@@ -1,6 +1,6 @@
 import fetch, { Headers } from 'node-fetch'
 
-import { JiraIssuesPage } from './types'
+import type { JiraIssuesPage } from './types'
 
 export default class JiraClient {
   constructor(
@@ -11,9 +11,9 @@ export default class JiraClient {
   ) {}
 
   async fethJiraIssuesPage(startAt: number): Promise<JiraIssuesPage> {
-    const url = new URL(`/rest/api/2/search`, this.baseUrl)
+    const url = new URL('/rest/api/2/search', this.baseUrl)
     url.searchParams.set('jql', `project=${this.projectKey}`)
-    url.searchParams.set('expand', `changelog`)
+    url.searchParams.set('expand', 'changelog')
     url.searchParams.set('startAt', startAt.toString())
     const res = await this.request(url.toString())
     return (await res.json()) as JiraIssuesPage

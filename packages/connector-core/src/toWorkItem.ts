@@ -1,4 +1,4 @@
-import { HistoricWorkItem, StageTimestamps, WorkItem } from './types'
+import type { HistoricWorkItem, StageTimestamps, WorkItem } from './types'
 
 export function toWorkItem<MappedStage extends string, OriginalStage extends string>(
   historicWorkItem: HistoricWorkItem<OriginalStage>,

@@ -1,4 +1,4 @@
-import { Transform } from 'stream'
+import type { Transform } from 'node:stream'
 
 import BufferingCsvStream from './BufferingCsvStream'
 import StreamingCsvStream from './StreamingCsvStream'

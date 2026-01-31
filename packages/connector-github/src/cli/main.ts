@@ -1,9 +1,9 @@
+import { pipeline } from 'node:stream'
 import { makeCsvStream, makeMapFromString, orderedMapValues } from '@oselvar/connector-core'
 import { Command } from 'commander'
-import { pipeline } from 'stream'
 
 import packageJson from '../../package.json'
-import GitHubWorkItemStream, { QueryParams } from '../GitHubWorkItemStream'
+import GitHubWorkItemStream, { type QueryParams } from '../GitHubWorkItemStream'
 
 const program = new Command()
 program.version(packageJson.version)
@@ -26,7 +26,7 @@ const pageSize = +program.opts().pagesize
 const queryParams: QueryParams = {
   owner,
   name,
-  ...(program.opts().direction == 'forward' ? { first: pageSize } : { last: pageSize }),
+  ...(program.opts().direction === 'forward' ? { first: pageSize } : { last: pageSize }),
 }
 
 pipeline(

@@ -1,10 +1,10 @@
-import { HistoricWorkItem, toWorkItem } from '@oselvar/connector-core'
-import { writeFile } from 'fs/promises'
-import { Readable } from 'stream'
+import { writeFile } from 'node:fs/promises'
+import { Readable } from 'node:stream'
+import { type HistoricWorkItem, toWorkItem } from '@oselvar/connector-core'
 
-import JiraClient from './JiraClient'
+import type JiraClient from './JiraClient'
 import makeHistoricWorkItem from './makeHistoricWorkItem'
-import { JiraIssue } from './types'
+import type { JiraIssue } from './types'
 
 /**
  * Outputs {@link WorkItem} objects.
@@ -14,7 +14,10 @@ export default class JiraWorkItemStream extends Readable {
   private startAt = 0
   private requestActive = false
 
-  constructor(private readonly jiraClient: JiraClient, private readonly stageMap: Map<string, string>) {
+  constructor(
+    private readonly jiraClient: JiraClient,
+    private readonly stageMap: Map<string, string>
+  ) {
     super({ objectMode: true })
   }
 
@@ -24,7 +27,9 @@ export default class JiraWorkItemStream extends Readable {
     }
     this.requestActive = true
     this.fetchHistoricWorkItems()
-      .then(() => (this.requestActive = false))
+      .then(() => {
+        this.requestActive = false
+      })
       .catch((err) => this.emit('error', err))
   }
 

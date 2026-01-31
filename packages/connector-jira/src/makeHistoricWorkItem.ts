@@ -1,6 +1,6 @@
-import { HistoricWorkItem, WorkItemSnapshot } from '@oselvar/connector-core'
+import type { HistoricWorkItem, WorkItemSnapshot } from '@oselvar/connector-core'
 
-import { JiraIssue, Status } from './types'
+import type { JiraIssue, Status } from './types'
 
 export default function makeHistoricWorkItem(jiraIssue: JiraIssue): HistoricWorkItem<string> {
   const snapshots: WorkItemSnapshot<string>[] = []

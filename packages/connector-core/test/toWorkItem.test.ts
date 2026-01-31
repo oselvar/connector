@@ -1,6 +1,6 @@
-import assert from 'assert'
+import assert from 'node:assert'
 
-import { HistoricWorkItem, makeMapFromString, toWorkItem, WorkItem } from '../src'
+import { type HistoricWorkItem, type WorkItem, makeMapFromString, toWorkItem } from '../src'
 
 describe('toWorkItem', () => {
   it('returns null when the work item has no timestamps, like a JIRA issue in the backlog', () => {
@@ -58,7 +58,7 @@ describe('toWorkItem', () => {
 
   it('overwrites backwards move except for arrival stage', () => {
     const stages = <const>['a', 'b', 'c', 'd']
-    type Stage = typeof stages[number]
+    type Stage = (typeof stages)[number]
 
     const historicWorkItem: HistoricWorkItem<Stage> = {
       id: 'id',
@@ -72,7 +72,8 @@ describe('toWorkItem', () => {
       ],
     }
 
-    const workItem: WorkItem<Stage> = toWorkItem(historicWorkItem, makeMapFromString('a,b,c,d'))!
+    const workItem = toWorkItem(historicWorkItem, makeMapFromString('a,b,c,d'))
+    assert.ok(workItem, 'Expected workItem to not be null')
 
     const expected: WorkItem<Stage> = {
       id: 'id',
@@ -86,10 +87,10 @@ describe('toWorkItem', () => {
 
   it('maps stages to new stages which is useful for poorly named stages and historic workflow changes', () => {
     const originalStages = <const>['a', 'b', 'c', 'd']
-    type OriginalStage = typeof originalStages[number]
+    type OriginalStage = (typeof originalStages)[number]
 
     const mappedStages = <const>['todo', 'doing', 'done']
-    type MappedStage = typeof mappedStages[number]
+    type MappedStage = (typeof mappedStages)[number]
 
     const historicWorkItem: HistoricWorkItem<OriginalStage> = {
       id: 'id',
@@ -102,10 +103,8 @@ describe('toWorkItem', () => {
       ],
     }
 
-    const workItem: WorkItem<MappedStage> = toWorkItem(
-      historicWorkItem,
-      makeMapFromString('a:todo,b:doing,c:doing,d:done')
-    )!
+    const workItem = toWorkItem(historicWorkItem, makeMapFromString('a:todo,b:doing,c:doing,d:done'))
+    assert.ok(workItem, 'Expected workItem to not be null')
 
     const expected: WorkItem<MappedStage> = {
       id: 'id',

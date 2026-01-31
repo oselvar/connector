@@ -1,6 +1,6 @@
+import { Readable } from 'node:stream'
 import { graphql } from '@octokit/graphql'
-import { HistoricWorkItem, toWorkItem, WorkItemSnapshot } from '@oselvar/connector-core'
-import { Readable } from 'stream'
+import { type HistoricWorkItem, type WorkItemSnapshot, toWorkItem } from '@oselvar/connector-core'
 
 type WorkItemType = 'issues' | 'pullRequests'
 

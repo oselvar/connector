@@ -1,6 +1,6 @@
+import { pipeline } from 'node:stream'
 import { makeCsvStream, makeMapFromString, orderedMapValues } from '@oselvar/connector-core'
 import { Command } from 'commander'
-import { pipeline } from 'stream'
 
 import packageJson from '../../package.json'
 import JiraClient from '../JiraClient'

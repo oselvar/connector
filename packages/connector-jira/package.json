@@ -10,18 +10,16 @@
   "repository": "https://github.com/oselvar/connector",
   "author": "Aslak Hellesøy",
   "license": "MIT",
-  "scripts": {
-    "upgrade": "npm-check-updates --upgrade"
-  },
+  "scripts": {},
   "dependencies": {
     "@oselvar/connector-core": "0.1.0",
-    "commander": "7.2.0",
-    "node-fetch": "2.6.1",
-    "source-map-support": "0.5.19"
+    "commander": "14.0.3",
+    "node-fetch": "3.3.2",
+    "source-map-support": "0.5.21"
   },
   "devDependencies": {
-    "@octokit/types": "6.13.1",
-    "@types/node": "14.14.41",
-    "typescript": "4.2.4"
+    "@octokit/types": "16.0.0",
+    "@types/node": "25.1.0",
+    "typescript": "5.9.3"
   }
 }
