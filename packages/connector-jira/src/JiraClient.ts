@@ -1,5 +1,3 @@
-import fetch, { Headers } from 'node-fetch'
-
 import type { JiraIssuesPage } from './types'
 
 export default class JiraClient {
@@ -20,8 +18,9 @@ export default class JiraClient {
   }
 
   private async request(url: string) {
-    const headers = new Headers()
-    headers.append('Authorization', `Basic ${Buffer.from(`${this.email}:${this.token}`).toString('base64')}`)
+    const headers = new Headers({
+      Authorization: `Basic ${Buffer.from(`${this.email}:${this.token}`).toString('base64')}`,
+    })
 
     const res = await fetch(url, { headers })
     if (!res.ok) {

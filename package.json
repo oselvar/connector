@@ -3,16 +3,17 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "tsc --build packages/tsconfig.build.json",
+    "typecheck": "tsc",
     "test": "vitest run",
     "upgrade": "npm-check-updates --upgrade --deep",
     "lint": "biome check",
     "lint-fix": "biome check --write",
-    "clean": "rm -rf node_modules pnpm-lock.yaml packages/*/node_modules packages/*/dist"
+    "clean": "rm -rf node_modules pnpm-lock.yaml packages/*/node_modules"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "npm-check-updates": "19.3.2",
+    "tsx": "^4.19.0",
     "typescript": "5.9.3",
     "vitest": "^4.0.18"
   }

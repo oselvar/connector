@@ -2,8 +2,7 @@
   "name": "@oselvar/connector-core",
   "version": "0.1.0",
   "description": "Oselvar Connector Core",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "src/index.ts",
   "repository": "https://github.com/oselvar/connector",
   "author": "Aslak Hellesøy",
   "license": "MIT",
@@ -12,8 +11,5 @@
     "@types/node": "25.1.0",
     "@types/d3-dsv": "3.0.7",
     "d3-dsv": "3.0.1"
-  },
-  "devDependencies": {
-    "typescript": "5.9.3"
   }
 }

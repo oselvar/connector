@@ -3,23 +3,18 @@
   "version": "0.1.0",
   "description": "Oselvar Connector for JIRA",
   "bin": {
-    "oselvar-github": "./bin/oselvar-jira"
+    "oselvar-jira": "./bin/oselvar-jira"
   },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "src/index.ts",
   "repository": "https://github.com/oselvar/connector",
   "author": "Aslak Hellesøy",
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "@oselvar/connector-core": "0.1.0",
-    "commander": "14.0.3",
-    "node-fetch": "3.3.2",
-    "source-map-support": "0.5.21"
+    "@oselvar/connector-core": "workspace:*",
+    "commander": "14.0.3"
   },
   "devDependencies": {
-    "@octokit/types": "16.0.0",
-    "@types/node": "25.1.0",
-    "typescript": "5.9.3"
+    "@types/node": "25.1.0"
   }
 }
