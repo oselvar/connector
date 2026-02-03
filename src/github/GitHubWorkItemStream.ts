@@ -27,7 +27,6 @@ export function createGitHubWorkItemStream(
   let currentParams = queryParams
   let done = false
   const itemQueue: WorkItem<string>[] = []
-  let rateLimit: GitHubRateLimit | undefined
 
   return new ReadableStream<WorkItem<string>>({
     async pull(controller) {
@@ -41,14 +40,8 @@ export function createGitHubWorkItemStream(
         return
       }
 
-      // Log rate limit info
-      if (rateLimit) {
-        console.error(new Date(), rateLimit)
-      }
-
       // Fetch next page
       const gitHubWorkItemsPage = await fetchGitHubWorkItemsPage(query, auth, currentParams)
-      rateLimit = gitHubWorkItemsPage.rateLimit
       const workItems = gitHubWorkItemsPage.repository[workItemType]
 
       // Process items into queue
