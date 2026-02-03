@@ -1,8 +1,9 @@
-import type { Transform } from 'node:stream'
+import { createBufferingCsvTransform } from './BufferingCsvStream'
+import { createStreamingCsvTransform } from './StreamingCsvStream'
+import type { WorkItem } from './types'
 
-import BufferingCsvStream from './BufferingCsvStream'
-import StreamingCsvStream from './StreamingCsvStream'
-
-export function makeCsvStream<Stage extends string>(stages: readonly Stage[]): Transform {
-  return stages.length > 0 ? new StreamingCsvStream(stages) : new BufferingCsvStream()
+export function makeCsvTransform<Stage extends string>(
+  stages: readonly Stage[]
+): TransformStream<WorkItem<Stage>, string> {
+  return stages.length > 0 ? createStreamingCsvTransform(stages) : createBufferingCsvTransform()
 }

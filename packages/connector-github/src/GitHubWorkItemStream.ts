@@ -1,6 +1,5 @@
-import { Readable } from 'node:stream'
 import { graphql } from '@octokit/graphql'
-import { type HistoricWorkItem, type WorkItemSnapshot, toWorkItem } from '@oselvar/connector-core'
+import { type HistoricWorkItem, type WorkItem, type WorkItemSnapshot, toWorkItem } from '@oselvar/connector-core'
 
 type WorkItemType = 'issues' | 'pullRequests'
 
@@ -14,51 +13,73 @@ export type QueryParams = Readonly<{
 }>
 
 /**
- * Outputs {@link HistoricWorkItem} objects.
+ * Creates a ReadableStream that outputs WorkItem objects from GitHub.
  */
-export default class GitHubWorkItemStream extends Readable {
-  private readonly query: string
-  private pageCount = 0
-  private rateLimit: GitHubRateLimit
+export function createGitHubWorkItemStream(
+  workItemType: WorkItemType,
+  auth: string,
+  maxPages: number | undefined,
+  stageMap: Map<string, string>,
+  queryParams: QueryParams
+): ReadableStream<WorkItem<string>> {
+  const query = makeQuery(workItemType)
+  let pageCount = 0
+  let currentParams = queryParams
+  let done = false
+  const itemQueue: WorkItem<string>[] = []
+  let rateLimit: GitHubRateLimit | undefined
 
-  constructor(
-    private readonly workItemType: WorkItemType,
-    private readonly auth: string,
-    private readonly maxPages: number | undefined,
-    private readonly stageMap: Map<string, string>,
-    private queryParams: QueryParams
-  ) {
-    super({ objectMode: true })
-    this.query = makeQuery(workItemType)
-  }
+  return new ReadableStream<WorkItem<string>>({
+    async pull(controller) {
+      // Drain queue first
+      if (itemQueue.length > 0) {
+        controller.enqueue(itemQueue.shift() as WorkItem<string>)
+        return
+      }
+      if (done) {
+        controller.close()
+        return
+      }
 
-  _read() {
-    this.fetchMore().catch((err) => this.emit('error', err))
-  }
+      // Log rate limit info
+      if (rateLimit) {
+        console.error(new Date(), rateLimit)
+      }
 
-  private async fetchMore() {
-    if (this.rateLimit) {
-      console.error(new Date(), this.rateLimit)
-    }
-    const gitHubWorkItemsPage = await fetchGitHubWorkItemsPage(this.query, this.auth, this.queryParams)
-    this.rateLimit = gitHubWorkItemsPage.rateLimit
-    const workItems = gitHubWorkItemsPage.repository[this.workItemType]
-    for (const issue of workItems.nodes) {
-      const historicWorkItem = makeHistoricWorkItem(issue)
-      const workItem = toWorkItem(historicWorkItem, this.stageMap)
-      this.push(workItem)
-    }
-    this.pageCount++
-    if (this.maxPages !== undefined && this.pageCount >= this.maxPages) {
-      this.push(null)
-    } else if (this.queryParams.first && workItems.pageInfo.endCursor) {
-      this.queryParams = { ...this.queryParams, ...{ afterCursor: workItems.pageInfo.endCursor } }
-    } else if (this.queryParams.last && workItems.pageInfo.startCursor) {
-      this.queryParams = { ...this.queryParams, ...{ beforeCursor: workItems.pageInfo.startCursor } }
-    } else {
-      this.push(null)
-    }
-  }
+      // Fetch next page
+      const gitHubWorkItemsPage = await fetchGitHubWorkItemsPage(query, auth, currentParams)
+      rateLimit = gitHubWorkItemsPage.rateLimit
+      const workItems = gitHubWorkItemsPage.repository[workItemType]
+
+      // Process items into queue
+      for (const issue of workItems.nodes) {
+        const historicWorkItem = makeHistoricWorkItem(issue)
+        const workItem = toWorkItem(historicWorkItem, stageMap)
+        if (workItem) {
+          itemQueue.push(workItem)
+        }
+      }
+
+      // Update pagination state
+      pageCount++
+      if (maxPages !== undefined && pageCount >= maxPages) {
+        done = true
+      } else if (currentParams.first && workItems.pageInfo.endCursor) {
+        currentParams = { ...currentParams, afterCursor: workItems.pageInfo.endCursor }
+      } else if (currentParams.last && workItems.pageInfo.startCursor) {
+        currentParams = { ...currentParams, beforeCursor: workItems.pageInfo.startCursor }
+      } else {
+        done = true
+      }
+
+      // Enqueue or close
+      if (itemQueue.length > 0) {
+        controller.enqueue(itemQueue.shift() as WorkItem<string>)
+      } else if (done) {
+        controller.close()
+      }
+    },
+  })
 }
 
 function makeQuery(workItemType: WorkItemType) {
@@ -96,7 +117,7 @@ function makeQuery(workItemType: WorkItemType) {
       }
     }
   }
-  
+
   rateLimit {
     limit
     cost

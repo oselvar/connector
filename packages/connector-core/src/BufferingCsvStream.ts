@@ -1,29 +1,21 @@
-import { Transform, type TransformCallback } from 'node:stream'
 import { csvFormat } from 'd3-dsv'
 
-import type { WorkItem } from '../src'
+import type { WorkItem } from './types'
 
 /**
- * Outputs Flow CSV from {@link HistoricWorkItem} stream.
+ * Creates a TransformStream that buffers all WorkItem objects and outputs
+ * CSV when the stream closes. Use this when stages are not known upfront.
  */
-export default class BufferingCsvStream<Stages extends string> extends Transform {
-  private readonly workItems: WorkItem<Stages>[] = []
+export function createBufferingCsvTransform<Stage extends string>(): TransformStream<WorkItem<Stage>, string> {
+  const workItems: WorkItem<Stage>[] = []
 
-  constructor() {
-    super({
-      readableObjectMode: false,
-      writableObjectMode: true,
-    })
-  }
-
-  _transform(workItem: WorkItem<Stages>, _: BufferEncoding, callback: TransformCallback) {
-    this.workItems.push(workItem)
-    callback()
-  }
-
-  _flush(callback: TransformCallback) {
-    const csv = csvFormat(this.workItems)
-    this.push(csv)
-    callback()
-  }
+  return new TransformStream<WorkItem<Stage>, string>({
+    transform(workItem) {
+      workItems.push(workItem)
+    },
+    flush(controller) {
+      const csv = csvFormat(workItems)
+      controller.enqueue(csv)
+    },
+  })
 }

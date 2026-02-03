@@ -1,7 +1,6 @@
-import type { Readable } from 'node:stream'
 import { makeMapFromString } from '@oselvar/connector-core'
 import { describe, expect, it } from 'vitest'
-import GitHubWorkItemStream from '../src/GitHubWorkItemStream'
+import { createGitHubWorkItemStream } from '../src/GitHubWorkItemStream'
 
 const auth = process.env.GITHUB_TOKEN
 
@@ -14,8 +13,8 @@ describeWithAuth('GitHubWorkItemStream', () => {
   const stageMap = makeMapFromString('open,labeled,commented,closed')
 
   // Helper to collect stream output
-  async function collect(stream: Readable) {
-    const items: unknown[] = []
+  async function collect<T>(stream: ReadableStream<T>): Promise<T[]> {
+    const items: T[] = []
     for await (const item of stream) {
       items.push(item)
     }
@@ -23,7 +22,7 @@ describeWithAuth('GitHubWorkItemStream', () => {
   }
 
   it('streams pull requests from oselvar/connector', async () => {
-    const stream = new GitHubWorkItemStream(
+    const stream = createGitHubWorkItemStream(
       'pullRequests',
       token,
       1, // maxPages
@@ -37,7 +36,7 @@ describeWithAuth('GitHubWorkItemStream', () => {
   }, 30000)
 
   it('streams issues from oselvar/connector', async () => {
-    const stream = new GitHubWorkItemStream('issues', token, 1, stageMap, {
+    const stream = createGitHubWorkItemStream('issues', token, 1, stageMap, {
       owner: 'oselvar',
       name: 'connector',
       last: 5,

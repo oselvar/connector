@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import { describe, it } from 'vitest'
 
 import { type HistoricWorkItem, type WorkItem, makeMapFromString, toWorkItem } from '../src'
 

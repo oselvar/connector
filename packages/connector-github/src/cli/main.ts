@@ -1,9 +1,10 @@
-import { pipeline } from 'node:stream'
-import { makeCsvStream, makeMapFromString, orderedMapValues } from '@oselvar/connector-core'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import { makeCsvTransform, makeMapFromString, orderedMapValues } from '@oselvar/connector-core'
 import { Command } from 'commander'
 
 import packageJson from '../../package.json'
-import GitHubWorkItemStream, { type QueryParams } from '../GitHubWorkItemStream'
+import { type QueryParams, createGitHubWorkItemStream } from '../GitHubWorkItemStream'
 
 const program = new Command()
 program.version(packageJson.version)
@@ -22,6 +23,7 @@ program.parse(process.argv)
 
 const [owner, name] = program.opts().repo.split('/')
 const stageMap = makeMapFromString(program.opts().stages)
+const stages = orderedMapValues(stageMap)
 const pageSize = +program.opts().pagesize
 const queryParams: QueryParams = {
   owner,
@@ -29,20 +31,24 @@ const queryParams: QueryParams = {
   ...(program.opts().direction === 'forward' ? { first: pageSize } : { last: pageSize }),
 }
 
-pipeline(
-  new GitHubWorkItemStream(
-    program.opts().type,
-    program.opts().auth,
-    program.opts().pages ? +program.opts().pages : undefined,
-    stageMap,
-    queryParams
-  ),
-  makeCsvStream(orderedMapValues(stageMap)),
-  process.stdout,
-  (err) => {
-    if (err) {
-      console.error(err)
-      process.exit(1)
-    }
-  }
+// Create W3C streams
+const source = createGitHubWorkItemStream(
+  program.opts().type,
+  program.opts().auth,
+  program.opts().pages ? +program.opts().pages : undefined,
+  stageMap,
+  queryParams
 )
+const csvTransform = makeCsvTransform(stages)
+
+// Pipe through transform
+const csvStream = source.pipeThrough(csvTransform)
+
+// Convert to Node.js stream for stdout
+// biome-ignore lint/suspicious/noExplicitAny: Type mismatch between DOM and Node.js ReadableStream
+const nodeReadable = Readable.fromWeb(csvStream as any)
+
+pipeline(nodeReadable, process.stdout).catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

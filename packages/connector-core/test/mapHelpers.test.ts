@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import { describe, it } from 'vitest'
 
 import { makeMapFromString, orderedMapValues } from '../src'
 
