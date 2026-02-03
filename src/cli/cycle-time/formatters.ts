@@ -1,6 +1,6 @@
 import type { CycleTimeItem } from './calculate'
 
-export type DateFormat = 'iso' | 'unix'
+export type DateFormat = 'iso' | 'unix' | 'decimal'
 
 /**
  * Formats cycle time data for YouPlot scatter plots.
@@ -9,11 +9,11 @@ export type DateFormat = 'iso' | 'unix'
  * Usage: ... | uplot scatter -H
  */
 export function formatYouplot(items: CycleTimeItem[], dateFormat: DateFormat = 'iso'): string {
-  const lines = ['date\tcycle_time\tid']
+  const lines = ['date\tcycle_time']
 
   for (const item of items) {
     const dateStr = formatDate(item.completionDate, dateFormat)
-    lines.push(`${dateStr}\t${item.cycleTimeDays.toFixed(2)}\t${item.id}`)
+    lines.push(`${dateStr}\t${item.cycleTimeDays.toFixed(2)}`)
   }
 
   return lines.join('\n')
@@ -43,7 +43,7 @@ set xlabel 'Completion Date'
 set ylabel 'Cycle Time (days)'
 
 set xdata time
-set timefmt '${dateFormat === 'iso' ? '%Y-%m-%dT%H:%M:%S' : '%s'}'
+set timefmt '${dateFormat === 'unix' ? '%s' : '%Y-%m-%d'}'
 set format x '%Y-%m-%d'
 set xtics rotate by -45
 
@@ -63,5 +63,14 @@ function formatDate(date: Date, format: DateFormat): string {
   if (format === 'unix') {
     return Math.floor(date.getTime() / 1000).toString()
   }
-  return date.toISOString().replace(/\.\d{3}Z$/, '')
+  if (format === 'decimal') {
+    // Year as decimal (e.g., 2022.5 for mid-2022)
+    const year = date.getUTCFullYear()
+    const startOfYear = Date.UTC(year, 0, 1)
+    const endOfYear = Date.UTC(year + 1, 0, 1)
+    const fraction = (date.getTime() - startOfYear) / (endOfYear - startOfYear)
+    return (year + fraction).toFixed(3)
+  }
+  // ISO format: YYYY-MM-DD
+  return date.toISOString().split('T')[0]
 }
