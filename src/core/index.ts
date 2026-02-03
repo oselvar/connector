@@ -1,6 +1,7 @@
 export * from './BufferingCsvStream'
 export * from './makeCsvStream'
 export * from './mapHelpers'
+export * from './parseCsv'
 export * from './StreamingCsvStream'
 export * from './toWorkItem'
 export * from './types'
