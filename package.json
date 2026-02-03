@@ -4,8 +4,7 @@
   "description": "Oselvar Connector",
   "main": "src/index.ts",
   "bin": {
-    "oselvar-github": "./bin/oselvar-github",
-    "oselvar-jira": "./bin/oselvar-jira"
+    "oselvar-metrics": "./bin/oselvar-metrics"
   },
   "repository": "https://github.com/oselvar/connector",
   "author": "Aslak Hellesoy",
