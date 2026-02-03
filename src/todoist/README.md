@@ -23,12 +23,12 @@ oselvar-metrics data todoist \
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
-| `--token <token>` | Todoist API token (default: `$TODOIST_TOKEN` env var) |
-| `--project-id <id>` | Todoist project ID (required) |
+| Option              | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `--token <token>`   | Todoist API token (default: `$TODOIST_TOKEN` env var)                        |
+| `--project-id <id>` | Todoist project ID (required)                                                |
 | `--stages <stages>` | Comma-separated sections to include. Use `Section:name` to rename in output. |
-| `--pages <n>` | Limit activity log pages to fetch |
+| `--pages <n>`       | Limit activity log pages to fetch                                            |
 
 ## Finding Your Project ID
 
@@ -43,13 +43,17 @@ curl -H "Authorization: Bearer $TODOIST_TOKEN" \
 
 ### No Section Change History
 
-**Todoist's Activity API does not track when tasks move between sections.**
+**Todoist's Activity API does not track when tasks move between sections.** (Verified February 2026)
 
 The activity log only records:
-- Task creation
-- Task completion
-- Content/description changes
-- Assignee changes
+- Task creation (`added` events)
+- Task completion (`completed` events)
+- Content/description changes (`updated` events with `content`/`description`)
+- Assignee changes (`updated` events with `responsible_uid`)
+- Task deletion (`deleted` events)
+- Task uncomplete (`uncompleted` events)
+
+The `extra_data` field in activity events never contains `section_id` or `last_section_id`, despite what the [API documentation schema](https://developer.todoist.com/sync/v9/) might suggest. This was verified by querying 150+ activity events across multiple pages.
 
 It does **not** record section (column) changes. This means:
 
@@ -69,7 +73,8 @@ If you're using Todoist in a Kanban style with sections like "Todo → Doing →
 
 1. **Use completion timestamps**: The `completed` stage accurately reflects when tasks were marked done
 2. **Approximate with creation date**: If tasks typically start in the first section, creation date approximates entry time
-3. **Consider Jira or GitHub**: These systems provide full workflow transition history
+3. **Set up webhooks for future tracking**: Todoist webhooks fire `item:updated` events when tasks move between sections. You could build a separate service to capture and store these events, enabling section change tracking going forward (but not retroactively)
+4. **Consider Jira or GitHub**: These systems provide full workflow transition history
 
 ### Example Output
 
