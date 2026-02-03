@@ -2,15 +2,15 @@ GITHUB_REPO ?= oselvar/connector
 
 .PHONY: all clean
 
-all: cycle-time.svg cycle-time-terminal.html cycle-time.txt
+all: cycle-time.svg cycle-time-terminal.png cycle-time.txt
 
 clean:
-	rm -f data.csv cycle-time.tsv cycle-time.txt cycle-time.gp cycle-time.svg cycle-time-terminal.html
+	rm -f data.csv cycle-time.tsv cycle-time.txt cycle-time.gp cycle-time.svg cycle-time-terminal.png
 
-.PRECIOUS: data.csv cycle-time.tsv cycle-time.txt cycle-time.svg cycle-time-terminal.html
+.PRECIOUS: data.csv cycle-time.tsv cycle-time.txt cycle-time.svg cycle-time-terminal.png
 
 data.csv:
-	pnpm exec ./bin/oselvar-metrics data github --auth $$GITHUB_TOKEN --repo $(GITHUB_REPO) --type issues --pages 3 > $@
+	pnpm exec ./bin/oselvar-metrics data github --auth "$$GITHUB_TOKEN" --repo $(GITHUB_REPO) --type issues --pages 3 > $@
 
 cycle-time.tsv: data.csv
 	pnpm exec ./bin/oselvar-metrics cycle-time --from open --to closed --format youplot --date-format unix --input $< > $@
@@ -24,5 +24,5 @@ cycle-time.gp: data.csv
 cycle-time.svg: cycle-time.gp
 	gnuplot $< 2>/dev/null
 
-cycle-time-terminal.html: cycle-time.txt
-	ansifilter --html --encoding utf-8 --font "Monaco" --font-size 14 -o $@ < $<
+cycle-time-terminal.png: cycle-time.txt
+	cat $< | $$(go env GOPATH)/bin/textimg -b white --foreground black -f /System/Library/Fonts/Monaco.ttf -o $@
