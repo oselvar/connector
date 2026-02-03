@@ -7,10 +7,29 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@octokit/graphql':
+        specifier: 9.0.3
+        version: 9.0.3
+      '@types/d3-dsv':
+        specifier: 3.0.7
+        version: 3.0.7
+      '@types/node':
+        specifier: 25.1.0
+        version: 25.1.0
+      commander:
+        specifier: 14.0.3
+        version: 14.0.3
+      d3-dsv:
+        specifier: 3.0.1
+        version: 3.0.1
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
+      '@octokit/types':
+        specifier: 16.0.0
+        version: 16.0.0
       npm-check-updates:
         specifier: 19.3.2
         version: 19.3.2

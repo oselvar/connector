@@ -1,17 +1,33 @@
 {
   "name": "@oselvar/connector",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Oselvar Connector",
+  "main": "src/index.ts",
+  "bin": {
+    "oselvar-github": "./bin/oselvar-github",
+    "oselvar-jira": "./bin/oselvar-jira"
+  },
+  "repository": "https://github.com/oselvar/connector",
+  "author": "Aslak Hellesoy",
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run",
-    "upgrade": "npm-check-updates --upgrade --deep",
+    "upgrade": "npm-check-updates --upgrade",
     "lint": "biome check",
     "lint-fix": "biome check --write",
-    "clean": "rm -rf node_modules pnpm-lock.yaml packages/*/node_modules"
+    "clean": "rm -rf node_modules pnpm-lock.yaml"
+  },
+  "dependencies": {
+    "@octokit/graphql": "9.0.3",
+    "@types/d3-dsv": "3.0.7",
+    "@types/node": "25.1.0",
+    "commander": "14.0.3",
+    "d3-dsv": "3.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@octokit/types": "16.0.0",
     "npm-check-updates": "19.3.2",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
