@@ -1,19 +1,14 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-    "module": "CommonJS",
-    "target": "ES2022",
-    "jsx": "react",
-    "noUnusedLocals": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "downlevelIteration": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "strictNullChecks": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "test/**/*", "*.ts"]
+  "include": ["packages/*/src/**/*", "packages/*/test/**/*", "*.ts"],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/github" },
+    { "path": "./packages/jira" },
+    { "path": "./packages/todoist" },
+    { "path": "./packages/cli" }
+  ]
 }

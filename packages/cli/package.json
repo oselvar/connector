@@ -1,0 +1,25 @@
+{
+  "name": "@oselvar/cli",
+  "version": "0.1.0",
+  "description": "Oselvar CLI Tool",
+  "type": "module",
+  "main": "./src/main.ts",
+  "types": "./src/main.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@oselvar/core": "workspace:*",
+    "@oselvar/github": "workspace:*",
+    "@oselvar/jira": "workspace:*",
+    "@oselvar/todoist": "workspace:*",
+    "commander": "14.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

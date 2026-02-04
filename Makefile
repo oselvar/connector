@@ -10,16 +10,16 @@ clean:
 .PRECIOUS: data.csv cycle-time.tsv cycle-time.txt cycle-time.svg cycle-time-terminal.png
 
 data.csv:
-	pnpm exec ./bin/oselvar-metrics data github --auth "$$GITHUB_TOKEN" --repo $(GITHUB_REPO) --type issues --pages 3 > $@
+	pnpm exec tsx packages/cli/src/main.ts data github --auth "$$GITHUB_TOKEN" --repo $(GITHUB_REPO) --type issues --pages 3 > $@
 
 cycle-time.tsv: data.csv
-	pnpm exec ./bin/oselvar-metrics cycle-time --from open --to closed --format youplot --date-format unix --input $< > $@
+	pnpm exec tsx packages/cli/src/main.ts cycle-time --from open --to closed --format youplot --date-format unix --input $< > $@
 
 cycle-time.txt: cycle-time.tsv
 	uplot scatter -H -t "Cycle Time" -C --canvas block -w 80 -h 25 --xlabel "date (unix)" -o $@ < $<
 
 cycle-time.gp: data.csv
-	pnpm exec ./bin/oselvar-metrics cycle-time --from open --to closed --format gnuplot --input $< > $@
+	pnpm exec tsx packages/cli/src/main.ts cycle-time --from open --to closed --format gnuplot --input $< > $@
 
 cycle-time.svg: cycle-time.gp
 	gnuplot $< 2>/dev/null

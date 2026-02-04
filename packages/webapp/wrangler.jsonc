@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "oselvar-webapp",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": ".svelte-kit/cloudflare"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oselvar-db",
+      "database_id": "TO_BE_CREATED"
+    }
+  ]
+}
