@@ -32,9 +32,9 @@ importers:
       '@oselvar/jira':
         specifier: workspace:*
         version: link:../jira
-      '@oselvar/todoist':
+      '@oselvar/linear':
         specifier: workspace:*
-        version: link:../todoist
+        version: link:../linear
       commander:
         specifier: 14.0.3
         version: 14.0.3
@@ -109,7 +109,7 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)
 
-  packages/todoist:
+  packages/linear:
     dependencies:
       '@oselvar/core':
         specifier: workspace:*
@@ -133,9 +133,6 @@ importers:
       '@oselvar/core':
         specifier: workspace:*
         version: link:../core
-      '@oselvar/todoist':
-        specifier: workspace:*
-        version: link:../todoist
       arctic:
         specifier: ^3.7.0
         version: 3.7.0

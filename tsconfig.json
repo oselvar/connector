@@ -8,7 +8,7 @@
     { "path": "./packages/core" },
     { "path": "./packages/github" },
     { "path": "./packages/jira" },
-    { "path": "./packages/todoist" },
+    { "path": "./packages/linear" },
     { "path": "./packages/cli" }
   ]
 }

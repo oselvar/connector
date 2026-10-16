@@ -1,4 +1,4 @@
-import { getWorkspaceById, getWorkspaceProjects, isWorkspaceMember } from '$lib/server/db'
+import { getWorkspaceById, isWorkspaceMember } from '$lib/server/db'
 import { error } from '@sveltejs/kit'
 import type { PageServerLoad } from './$types'
 
@@ -18,12 +18,10 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
     error(403, 'Not a member of this workspace')
   }
 
-  const projects = await getWorkspaceProjects(db, workspace.id)
   const shareUrl = `${url.origin}/join/${workspace.share_token}`
 
   return {
     workspace,
-    projects,
     shareUrl,
   }
 }

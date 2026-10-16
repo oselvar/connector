@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@oselvar/core": "workspace:*",
-    "@oselvar/todoist": "workspace:*",
     "arctic": "^3.7.0",
     "lucia": "^3.2.2",
     "@lucia-auth/adapter-sqlite": "^3.0.2"

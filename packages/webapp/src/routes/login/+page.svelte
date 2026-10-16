@@ -20,16 +20,6 @@ const { data }: { data: PageData } = $props()
         </svg>
         Continue with GitHub
       </a>
-
-      <a
-        href="/login/todoist"
-        class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-6 py-3 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-      >
-        <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M21 0H3C1.35 0 0 1.35 0 3v18c0 1.65 1.35 3 3 3h18c1.65 0 3-1.35 3-3V3c0-1.65-1.35-3-3-3z" />
-        </svg>
-        Continue with Todoist
-      </a>
     </div>
 
     <p class="mt-8 text-center text-sm text-gray-500">

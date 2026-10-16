@@ -7,7 +7,7 @@ const { data }: { data: PageData } = $props()
 <div class="flex min-h-screen flex-col items-center justify-center">
   <div class="mx-auto max-w-md text-center">
     <h1 class="mb-4 text-4xl font-bold text-gray-900">Oselvar Metrics</h1>
-    <p class="mb-8 text-lg text-gray-600">Track and visualize your team's workflow metrics from Todoist and GitHub.</p>
+    <p class="mb-8 text-lg text-gray-600">Track and visualize your team's workflow metrics from Linear and GitHub.</p>
 
     {#if data.user}
       <a

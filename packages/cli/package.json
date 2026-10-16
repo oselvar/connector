@@ -13,7 +13,7 @@
     "@oselvar/core": "workspace:*",
     "@oselvar/github": "workspace:*",
     "@oselvar/jira": "workspace:*",
-    "@oselvar/todoist": "workspace:*",
+    "@oselvar/linear": "workspace:*",
     "commander": "14.0.3"
   },
   "devDependencies": {

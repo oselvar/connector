@@ -14,18 +14,8 @@ const { data }: { data: PageData } = $props()
       class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md"
     >
       <h3 class="text-lg font-medium text-gray-900">Workspaces</h3>
-      <p class="mt-2 text-sm text-gray-500">Manage your workspaces and projects</p>
+      <p class="mt-2 text-sm text-gray-500">Manage your workspaces</p>
     </a>
-
-    {#if !data.user?.todoistId}
-      <a
-        href="/login/todoist"
-        class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md"
-      >
-        <h3 class="text-lg font-medium text-gray-900">Connect Todoist</h3>
-        <p class="mt-2 text-sm text-gray-500">Link your Todoist account to track tasks</p>
-      </a>
-    {/if}
 
     {#if !data.user?.githubId}
       <a

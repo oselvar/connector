@@ -12,21 +12,7 @@ function copyShareLink() {
   <div class="sm:flex sm:items-center sm:justify-between">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">{data.workspace.name}</h1>
-      <p class="mt-1 text-sm text-gray-500">Manage projects and view metrics</p>
-    </div>
-    <div class="mt-4 flex space-x-3 sm:mt-0">
-      <a
-        href="/app/workspaces/{data.workspace.id}/projects"
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-      >
-        Add project
-      </a>
-      <a
-        href="/api/workspaces/{data.workspace.id}/export"
-        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-      >
-        Export CSV
-      </a>
+      <p class="mt-1 text-sm text-gray-500">Manage members and view metrics</p>
     </div>
   </div>
 
@@ -42,35 +28,5 @@ function copyShareLink() {
       </button>
     </div>
     <p class="mt-1 text-xs text-gray-500">Share this link to invite team members to this workspace.</p>
-  </div>
-
-  <div class="mt-8">
-    <h2 class="text-lg font-medium text-gray-900">Projects</h2>
-
-    {#if data.projects.length === 0}
-      <div class="mt-4 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-        <h3 class="text-sm font-semibold text-gray-900">No projects</h3>
-        <p class="mt-1 text-sm text-gray-500">Add a Todoist project to start tracking metrics.</p>
-        <div class="mt-4">
-          <a
-            href="/app/workspaces/{data.workspace.id}/projects"
-            class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
-            Add project
-          </a>
-        </div>
-      </div>
-    {:else}
-      <div class="mt-4 grid gap-4 sm:grid-cols-2">
-        {#each data.projects as project}
-          <div class="rounded-lg border border-gray-200 bg-white p-4">
-            <h3 class="font-medium text-gray-900">{project.todoist_project_name}</h3>
-            <p class="mt-1 text-sm text-gray-500">
-              {project.webhook_registered_at ? 'Webhook active' : 'No webhook'}
-            </p>
-          </div>
-        {/each}
-      </div>
-    {/if}
   </div>
 </div>

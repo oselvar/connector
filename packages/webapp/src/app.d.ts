@@ -11,8 +11,6 @@ declare global {
         DB: D1Database
         GITHUB_CLIENT_ID: string
         GITHUB_CLIENT_SECRET: string
-        TODOIST_CLIENT_ID: string
-        TODOIST_CLIENT_SECRET: string
       }
     }
   }

@@ -42,7 +42,6 @@ export const handle: Handle = async ({ event, resolve }) => {
     ? {
         id: user.id,
         githubId: user.githubId,
-        todoistId: user.todoistId,
       }
     : null
   event.locals.session = session
