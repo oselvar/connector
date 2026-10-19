@@ -1,21 +1,22 @@
 import { issueIdentifier } from '$lib/format'
 import { type StageRange, stageRangeSearch } from '$lib/stageRange.svelte'
-import { type CoachChart, type CoachFinding, type WorkItem, coach } from '@oselvar/core'
+import type { TeamContext } from '$lib/team'
+import { type CoachChart, type CoachFinding, coach } from '@oselvar/core'
+import type { LinearWorkItem } from '@oselvar/linear'
 
-export function teamCoach(
-  items: readonly WorkItem<string>[],
-  stages: readonly string[],
-  range: StageRange,
-  commitmentStage: string | undefined
-): CoachFinding[] {
+export function teamCoach(issues: readonly LinearWorkItem[], team: TeamContext, range: StageRange): CoachFinding[] {
+  const assignees = new Map(issues.map((issue) => [issue.workItem.id, issue.assignee ?? undefined]))
   return coach({
-    items,
-    stages,
-    fromStage: stages[range.from],
-    toStage: stages[range.to],
-    commitmentStage,
+    items: issues.map((issue) => issue.workItem),
+    stages: team.stages,
+    queueStage: team.stages[range.from],
+    fromStage: team.stages[range.from + 1],
+    toStage: team.stages[range.to],
+    notStartedStages: team.notStartedStages,
     now: new Date(),
     identify: (item) => issueIdentifier(item.name ?? item.id),
+    teamSize: team.teamSize,
+    assigneeOf: (item) => assignees.get(item.id),
   })
 }
 
@@ -32,7 +33,7 @@ const chartNames: Record<CoachChart, string> = {
   aging: 'the aging work chart',
   flow: 'the cumulative flow chart',
   throughput: 'the throughput chart',
-  wip: 'the work in progress chart',
+  wip: 'the active work chart',
 }
 
 /** Links to a team's pages that keep the selected range */

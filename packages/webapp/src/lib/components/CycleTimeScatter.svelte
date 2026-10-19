@@ -1,5 +1,6 @@
 <script lang="ts">
 import { rollingColor } from '$lib/colors'
+import StateName from '$lib/components/StateName.svelte'
 import { formatDate, formatDuration, formatShortDuration } from '$lib/format'
 import { MILLISECONDS_PER_DAY } from '@oselvar/core'
 import { scaleLinear, scaleLog, scaleTime } from 'd3-scale'
@@ -113,7 +114,7 @@ function onClick() {
     {height}
     class="block {hoveredPoint ? 'cursor-pointer' : ''}"
     role="img"
-    aria-label="Scatter plot of {points.length} issues: days from {fromName} to {toName} against the date they reached {toName}"
+    aria-label="Scatter plot of {points.length} issues: days from starting to finishing against the date they reached {toName}"
     onpointermove={onPointerMove}
     onpointerleave={() => (hovered = null)}
     onclick={onClick}
@@ -170,8 +171,8 @@ function onClick() {
       style:transform="translate({flip ? 'calc(-100% - 14px)' : '14px'}, -50%)"
     >
       <div class="font-semibold text-gray-900">{hoveredPoint.identifier}</div>
-      <div class="mt-0.5 text-gray-700">{formatDuration(hoveredPoint.cycleTimeDays)} from {fromName}</div>
-      <div class="mt-0.5 text-gray-500">Reached {toName} {formatDate(hoveredPoint.completionDate)}</div>
+      <div class="mt-0.5 text-gray-700">{formatDuration(hoveredPoint.cycleTimeDays)} from start to finish</div>
+      <div class="mt-0.5 text-gray-500">Reached <StateName name={toName} /> {formatDate(hoveredPoint.completionDate)}</div>
       <div class="mt-1.5 text-indigo-600">Click to open in Linear</div>
     </div>
   {/if}

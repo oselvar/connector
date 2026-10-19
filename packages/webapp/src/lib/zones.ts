@@ -1,5 +1,5 @@
 /**
- * How an in-progress item's age compares with how old past items were when they left
+ * How an active item's age compares with how old past items were when they left
  * the same stage: within the 50th percentile, past it, past the 70th, or past the 85th.
  * Plain colors rather than Tailwind classes, since these are picked at runtime.
  */

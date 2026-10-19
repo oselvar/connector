@@ -1,8 +1,10 @@
 <script lang="ts">
 import AgingChart, { type AgingColumn, type AgingDot } from '$lib/components/AgingChart.svelte'
 import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
+import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
+import StateName from '$lib/components/StateName.svelte'
 import { formatDuration, issueIdentifier } from '$lib/format'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { type StagePace, zones } from '$lib/zones'
@@ -16,7 +18,9 @@ const range = getStageRange()
 let log = $state(false)
 const now = new Date()
 
-const fromName = $derived(stages[range.from])
+// Where work waits, and the first stage where it is active
+const queueName = $derived(stages[range.from])
+const fromName = $derived(stages[range.from + 1])
 const toName = $derived(stages[range.to])
 const workItems = $derived(issues.map((issue) => issue.workItem))
 
@@ -70,7 +74,7 @@ const dots: AgingDot[] = $derived(
 )
 
 const columns: AgingColumn[] = $derived(
-  stages.slice(range.from, range.to).map((stage) => ({
+  stages.slice(range.from + 1, range.to).map((stage) => ({
     stage,
     count: dots.filter((dot) => dot.stage === stage).length,
     pace: paces.get(stage),
@@ -78,46 +82,42 @@ const columns: AgingColumn[] = $derived(
 )
 
 const overdue = $derived(finishedDays.length === 0 ? 0 : dots.filter((dot) => dot.ageDays > p85).length)
-const notStarted = $derived(
-  issues.filter((issue) => {
-    const index = stages.indexOf(issue.currentState)
-    return index !== -1 && index < range.from
-  }).length
-)
+const waiting = $derived(issues.filter((issue) => issue.currentState === queueName).length)
 const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`)
 </script>
 
 {#if dots.length === 0}
-  <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-    Nothing is in progress between {fromName} and {toName}.
-  </p>
-  <p class="mt-3.5 text-base text-gray-600">
-    {plural(notStarted, "issue hasn't", "issues haven't")} reached {fromName} yet.
+  <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">No issues are active.</p>
+  <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
+    <RangeExplanation queue={queueName} finish={toName} />
+    {plural(waiting, 'issue is', 'issues are')} waiting in <StateName name={queueName} />.
   </p>
 {:else if finishedDays.length === 0}
   <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-    {plural(dots.length, 'issue is', 'issues are')} in progress between {fromName} and {toName}.
+    {plural(dots.length, 'issue is', 'issues are')} active.
   </p>
   <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
     None have finished yet, so there is nothing to compare their age with.
+    <RangeExplanation queue={queueName} finish={toName} />
   </p>
 {:else}
   <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
     {#if overdue === 0}
-      Nothing in progress is older than 85% of finished work.
+      No active issue is older than 85% of finished work.
     {:else}
-      {plural(overdue, 'issue has', 'issues have')} been in progress longer than 85% of finished issues took.
+      {plural(overdue, 'issue has', 'issues have')} been active longer than 85% of finished issues took.
     {/if}
   </p>
   <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
-    {plural(dots.length, 'issue is', 'issues are')} between {fromName} and {toName}. 85% of finished issues took
+    {plural(dots.length, 'issue is', 'issues are')} active. 85% of finished issues took
     {formatDuration(p85)} or less{overdue > 0 ? `, so ${overdue === 1 ? 'that one is' : 'those are'} the first to look at` : ''}.
-    {plural(notStarted, "issue hasn't", "issues haven't")} reached {fromName} yet and {notStarted === 1 ? "isn't" : "aren't"}
+    <RangeExplanation queue={queueName} finish={toName} />
+    {plural(waiting, 'issue is', 'issues are')} waiting in <StateName name={queueName} /> and {waiting === 1 ? "isn't" : "aren't"}
     shown.
   </p>
 {/if}
 
-<ChartCoachNote items={workItems} chart="aging" />
+<ChartCoachNote {issues} chart="aging" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
   <StageRange {stages} bind:from={range.from} bind:to={range.to} />
@@ -145,7 +145,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
   <section class="mt-6">
     <h2 class="text-lg font-semibold text-gray-900">Oldest first</h2>
     <p class="mt-1 text-sm text-gray-600">
-      Every issue in progress, with how it compares to finished issues at the same stage.
+      Every active issue, with how it compares to finished issues at the same stage.
     </p>
     <div class="mt-3 overflow-x-auto rounded-xl bg-white shadow-sm">
       <table class="w-full border-collapse text-sm">
@@ -165,7 +165,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
                   {dot.identifier}
                 </a>
               </td>
-              <td class="px-4 py-2 text-gray-600">{dot.stage}</td>
+              <td class="px-4 py-2 text-gray-600"><StateName name={dot.stage} /></td>
               <td class="px-4 py-2 text-right tabular-nums">{formatDuration(dot.ageDays)}</td>
               <td class="px-4 py-2 text-gray-700">
                 <span class="inline-flex items-center gap-2">

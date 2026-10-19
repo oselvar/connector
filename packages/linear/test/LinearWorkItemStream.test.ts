@@ -17,6 +17,7 @@ function issue(n: number, spans: LinearIssue['stateHistory']): LinearIssue {
     createdAt: '2026-01-01T00:00:00.000Z',
     state: { id: 's-done', name: 'Done', type: 'completed' },
     archivedAt: null,
+    assignee: null,
     stateHistory: spans,
   }
 }
@@ -163,6 +164,7 @@ describe('LinearWorkItemStream', () => {
           'In Progress': new Date('2026-01-02T00:00:00.000Z'),
         },
         currentState: 'In Progress',
+        assignee: null,
       },
       {
         workItem: {
@@ -171,6 +173,7 @@ describe('LinearWorkItemStream', () => {
           Done: new Date('2026-01-02T00:00:00.000Z'),
         },
         currentState: 'Done',
+        assignee: null,
       },
     ])
   })

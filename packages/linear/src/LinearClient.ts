@@ -30,6 +30,7 @@ const ISSUES_QUERY = `
         url
         createdAt
         archivedAt
+        assignee { displayName }
         state { id name type }
         stateHistory(first: 50) { ${STATE_SPAN_FIELDS} }
       }
@@ -42,6 +43,14 @@ const STATE_HISTORY_QUERY = `
   query StateHistory($issueId: String!, $after: String) {
     issue(id: $issueId) {
       stateHistory(first: 50, after: $after) { ${STATE_SPAN_FIELDS} }
+    }
+  }
+`
+
+const TEAM_MEMBERS_QUERY = `
+  query TeamMembers($teamKey: String!) {
+    teams(filter: { key: { eq: $teamKey } }) {
+      nodes { members(first: 250) { nodes { active } } }
     }
   }
 `
@@ -109,6 +118,15 @@ export class LinearClient {
       throw new Error(`No workflow states found for Linear team ${this.teamKey}`)
     }
     return data.workflowStates.nodes
+  }
+
+  /** How many active people are on the team */
+  async fetchMemberCount(): Promise<number> {
+    const data = await this.query<{ teams: { nodes: { members: { nodes: { active: boolean }[] } }[] } }>(
+      TEAM_MEMBERS_QUERY,
+      { teamKey: this.teamKey }
+    )
+    return data.teams.nodes[0]?.members.nodes.filter((member) => member.active).length ?? 0
   }
 
   async fetchIssuesPage(after: string | null, pageSize: number): Promise<LinearIssuesPage> {

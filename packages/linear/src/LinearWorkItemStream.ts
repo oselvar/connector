@@ -10,6 +10,8 @@ import type { LinearIssue, LinearStateSpan, LinearWorkflowState } from './types'
 export type LinearWorkItem = {
   workItem: WorkItem<string>
   currentState: string
+  /** Who the issue is assigned to, if anyone */
+  assignee: string | null
 }
 
 /**
@@ -60,7 +62,11 @@ export function createLinearIssueStream(
           const stateSpans = await fetchAllStateSpans(linearClient, issue)
           const workItem = toWorkItem(makeHistoricWorkItem(issue, stateSpans, states), stageMap)
           if (workItem) {
-            itemQueue.push({ workItem, currentState: stageMap.get(issue.state.name) ?? issue.state.name })
+            itemQueue.push({
+              workItem,
+              currentState: stageMap.get(issue.state.name) ?? issue.state.name,
+              assignee: issue.assignee?.displayName ?? null,
+            })
           }
         }
 

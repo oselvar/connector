@@ -16,18 +16,21 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
   }
 
   const { client, states, defaultStageMap } = await openTeam(db, env, team)
+  const teamSize = await client.fetchMemberCount()
   const stages = orderedMapValues(defaultStageMap)
   const stateTypes = new Map(states.map((state) => [state.name, state.type]))
 
-  // Start at the first "started" state and end at the first "completed" one
-  const defaultFrom = Math.max(
-    stages.findIndex((stage) => stateTypes.get(stage) === 'started'),
-    0
+  // States Linear itself marks as not started. Names differ between teams, but these types don't.
+  const notStartedStages = stages.filter((stage) =>
+    ['triage', 'backlog', 'unstarted'].includes(stateTypes.get(stage) ?? '')
   )
+
+  // The left handle is where work waits: the state just before the first "started" one.
+  // The right handle is where work is finished: the first "completed" state.
+  const firstStarted = stages.findIndex((stage) => stateTypes.get(stage) === 'started')
   const firstCompleted = stages.findIndex((stage) => stateTypes.get(stage) === 'completed')
-  const defaultTo = firstCompleted > defaultFrom ? firstCompleted : stages.length - 1
-  // Where work counts as started, for the coach
-  const commitmentStage = stages.find((stage) => stateTypes.get(stage) === 'started')
+  const defaultTo = firstCompleted >= 2 ? firstCompleted : stages.length - 1
+  const defaultFrom = Math.min(Math.max(firstStarted - 1, 0), Math.max(defaultTo - 2, 0))
 
   return {
     workspace,
@@ -35,7 +38,8 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
     stages,
     defaultFrom,
     defaultTo,
-    commitmentStage,
+    notStartedStages,
+    teamSize,
     // Streamed, so the page renders while issues load from Linear
     issues: collect(createLinearIssueStream(client, states, defaultStageMap)),
   }

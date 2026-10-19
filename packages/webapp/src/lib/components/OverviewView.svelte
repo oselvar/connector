@@ -1,19 +1,23 @@
 <script lang="ts">
 import { teamCoach, teamLinks } from '$lib/coach'
 import CoachFindingCard from '$lib/components/CoachFindingCard.svelte'
+import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
+import StateText from '$lib/components/StateText.svelte'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { getTeam } from '$lib/team'
-import { type WorkItem, coachHeadline } from '@oselvar/core'
+import { coachHeadline } from '@oselvar/core'
+import type { LinearWorkItem } from '@oselvar/linear'
 
-const { items }: { items: readonly WorkItem<string>[] } = $props()
+const { issues }: { issues: readonly LinearWorkItem[] } = $props()
 
 const team = getTeam()
 const range = getStageRange()
 
-const fromName = $derived(team.stages[range.from])
+// Where work waits
+const queueName = $derived(team.stages[range.from])
 const toName = $derived(team.stages[range.to])
-const findings = $derived(teamCoach(items, team.stages, range, team.commitmentStage))
+const findings = $derived(teamCoach(issues, team, range))
 const links = $derived(teamLinks(team.workspaceId, team.teamId, team.stages, range))
 
 const tally = $derived.by(() => {
@@ -31,10 +35,10 @@ const tally = $derived.by(() => {
 </script>
 
 <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-  {coachHeadline(findings)}
+  <StateText text={coachHeadline(findings)} stages={team.stages} />
 </p>
 <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
-  Looking at issues from {fromName} to {toName}, and comparing the last 30 days with the 30 days before. {tally}
+  <RangeExplanation queue={queueName} finish={toName} /> Comparing the last 30 days with the 30 days before. {tally}
 </p>
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-4 pt-6 shadow-sm sm:px-6">
@@ -46,7 +50,7 @@ const tally = $derived.by(() => {
     <CoachFindingCard {finding} href={links.chart(finding.chart)} chartName={links.chartName(finding.chart)} />
   {:else}
     <p class="rounded-xl bg-white p-6 text-gray-600 shadow-sm">
-      There isn't enough history between {fromName} and {toName} yet to give advice.
+      There isn't enough history yet to give advice.
     </p>
   {/each}
 </div>

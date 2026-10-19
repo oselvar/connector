@@ -1,7 +1,8 @@
 <script lang="ts">
 /**
- * Picks a span of a workflow: two handles on a track of ordered stages.
- * `from` is always before `to`.
+ * Picks a span of a workflow with two handles on a track of ordered stages. The left handle's
+ * stage is where work waits, the stages after it are active, and the right handle's stage is
+ * where work is finished. So there is always at least one active stage between the handles.
  */
 let { stages, from = $bindable(), to = $bindable() }: { stages: readonly string[]; from: number; to: number } = $props()
 
@@ -9,16 +10,16 @@ const last = $derived(stages.length - 1)
 const position = (index: number) => `${(index / last) * 100}%`
 
 function setFrom(value: number) {
-  from = Math.min(value, to - 1)
+  from = Math.min(value, to - 2)
 }
 
 function setTo(value: number) {
-  to = Math.max(value, from + 1)
+  to = Math.max(value, from + 2)
 }
 
 // Clicking a stage moves whichever handle is closest to it
 function pick(index: number) {
-  if (Math.abs(index - from) <= Math.abs(index - to) && index < to) setFrom(index)
+  if (Math.abs(index - from) <= Math.abs(index - to) && index <= to - 2) setFrom(index)
   else setTo(index)
 }
 </script>
@@ -27,19 +28,27 @@ function pick(index: number) {
   <div class="relative h-10">
     <!-- The whole workflow -->
     <div class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gray-200"></div>
-    <!-- The selected span -->
+    <!-- Waiting: from the queue stage to where work starts -->
+    <div
+      class="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-indigo-200"
+      style:left={position(from)}
+      style:right={`calc(100% - ${position(from + 1)})`}
+    ></div>
+    <!-- Active: from where work starts to where it is finished -->
     <div
       class="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-indigo-600"
-      style:left={position(from)}
+      style:left={position(from + 1)}
       style:right={`calc(100% - ${position(to)})`}
     ></div>
     <!-- A stop for each stage -->
     {#each stages as _, i}
       <div
-        class="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white {i >= from &&
+        class="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white {i > from &&
         i <= to
           ? 'border-indigo-600'
-          : 'border-gray-300'}"
+          : i === from
+            ? 'border-indigo-300'
+            : 'border-gray-300'}"
         style:left={position(i)}
       ></div>
     {/each}
@@ -53,7 +62,7 @@ function pick(index: number) {
         setFrom(+e.currentTarget.value)
         e.currentTarget.value = String(from)
       }}
-      aria-label="Start stage"
+      aria-label="Where work waits"
       aria-valuetext={stages[from]}
     />
     <input
@@ -66,7 +75,7 @@ function pick(index: number) {
         setTo(+e.currentTarget.value)
         e.currentTarget.value = String(to)
       }}
-      aria-label="End stage"
+      aria-label="Where work is finished"
       aria-valuetext={stages[to]}
     />
   </div>
@@ -85,6 +94,15 @@ function pick(index: number) {
         {stage}
       </button>
     {/each}
+  </div>
+
+  <!-- What each part of the range means -->
+  <div class="relative h-5 text-xs text-gray-500" aria-hidden="true">
+    <span class="absolute -translate-x-1/2 whitespace-nowrap" style:left={position(from)}>Waiting</span>
+    <span class="absolute -translate-x-1/2 whitespace-nowrap font-medium text-indigo-700" style:left={position((from + 1 + to) / 2)}
+      >Active</span
+    >
+    <span class="absolute -translate-x-1/2 whitespace-nowrap" style:left={position(to)}>Finished</span>
   </div>
 </div>
 

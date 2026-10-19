@@ -1,6 +1,8 @@
 <script lang="ts">
 import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
+import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
+import StateName from '$lib/components/StateName.svelte'
 import { formatDate } from '$lib/format'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { getTeam } from '$lib/team'
@@ -14,8 +16,16 @@ import {
   makeFlowTimeline,
   seededRandom,
 } from '@oselvar/core'
+import type { LinearWorkItem } from '@oselvar/linear'
 
-const { items }: { items: readonly WorkItem<string>[] } = $props()
+const {
+  items,
+  issues,
+}: {
+  items: readonly WorkItem<string>[]
+  /** The same issues, with who they are assigned to, for the coach */
+  issues: readonly LinearWorkItem[]
+} = $props()
 
 const team = getTeam()
 const range = getStageRange()
@@ -29,7 +39,9 @@ const chances = [
   { percent: 50, label: 'Even chance' },
 ]
 
-const fromName = $derived(team.stages[range.from])
+// Where work waits, and the first stage where it is active
+const queueName = $derived(team.stages[range.from])
+const fromName = $derived(team.stages[range.from + 1])
 const toName = $derived(team.stages[range.to])
 const timeline = $derived(makeFlowTimeline(items, team.stages, fromName, toName))
 
@@ -63,17 +75,18 @@ const dateIn = (daysAhead: number) => formatDate(new Date(today + daysAhead * DA
     How much will be done, and when?
   </p>
   <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
-    These forecasts replay how many issues reached {toName} each day over the last {history.length} days, {runs.toLocaleString(
+    These forecasts replay how many issues reached <StateName name={toName} /> each day over the last {history.length} days, {runs.toLocaleString(
       'en'
     )} times. They assume the team keeps working the way it has; if that changes, so will the answers.
+    <RangeExplanation queue={queueName} finish={toName} />
   </p>
 {:else}
   <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-    Nothing has reached {toName} in the last {historyDays} days, so there is nothing to forecast from yet.
+    Nothing has reached <StateName name={toName} /> in the last {historyDays} days, so there is nothing to forecast from yet.
   </p>
 {/if}
 
-<ChartCoachNote {items} chart="throughput" />
+<ChartCoachNote {issues} chart="throughput" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-4 pt-6 shadow-sm sm:px-6">
   <StageRange stages={team.stages} bind:from={range.from} bind:to={range.to} />
@@ -83,7 +96,7 @@ const dateIn = (daysAhead: number) => formatDate(new Date(today + daysAhead * DA
   <div class="mt-4 grid gap-4 md:grid-cols-2">
     <section class="rounded-xl bg-white p-6 shadow-sm">
       <label class="block">
-        <span class="text-lg font-semibold text-gray-900">How many issues will reach {toName} by</span>
+        <span class="text-lg font-semibold text-gray-900">How many issues will reach <StateName name={toName} /> by</span>
         <input
           type="date"
           bind:value={byDate}
@@ -113,7 +126,7 @@ const dateIn = (daysAhead: number) => formatDate(new Date(today + daysAhead * DA
 
     <section class="rounded-xl bg-white p-6 shadow-sm">
       <label class="block">
-        <span class="text-lg font-semibold text-gray-900">When will this many issues reach {toName}?</span>
+        <span class="text-lg font-semibold text-gray-900">When will this many issues reach <StateName name={toName} />?</span>
         <input
           type="number"
           min="1"

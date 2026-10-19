@@ -1,5 +1,6 @@
 <script lang="ts">
 import type { PercentileLine } from '$lib/components/CycleTimeScatter.svelte'
+import StateName from '$lib/components/StateName.svelte'
 import { formatDuration, formatShortDuration } from '$lib/format'
 import { type StagePace, zoneSentence, zones } from '$lib/zones'
 import { scaleLinear, scaleLog } from 'd3-scale'
@@ -113,7 +114,7 @@ const bottom = $derived(height - margin.bottom)
     {height}
     class="block {hoveredDot ? 'cursor-pointer' : ''}"
     role="img"
-    aria-label="Aging chart of {dots.length} issues in progress, by stage and days since {fromName}"
+    aria-label="Aging chart of {dots.length} active issues, by stage and days since they started"
     onpointermove={onPointerMove}
     onpointerleave={() => (hovered = null)}
     onclick={onClick}
@@ -187,7 +188,7 @@ const bottom = $derived(height - margin.bottom)
     >
       <div class="font-semibold text-gray-900">{hoveredDot.identifier}</div>
       <div class="mt-0.5 text-gray-700">
-        {formatDuration(hoveredDot.ageDays)} since {fromName}, now in {hoveredDot.stage}
+        {formatDuration(hoveredDot.ageDays)} since starting, now in <StateName name={hoveredDot.stage} />
       </div>
       <div class="mt-0.5 text-gray-700">{zoneSentence(hoveredDot.zone, hoveredDot.stage)}</div>
       <div class="mt-1.5 text-indigo-600">Click to open in Linear</div>

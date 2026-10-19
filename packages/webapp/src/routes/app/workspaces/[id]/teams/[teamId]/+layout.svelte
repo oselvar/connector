@@ -22,8 +22,11 @@ setTeam({
   get stages() {
     return data.stages
   },
-  get commitmentStage() {
-    return data.commitmentStage
+  get notStartedStages() {
+    return data.notStartedStages
+  },
+  get teamSize() {
+    return data.teamSize
   },
 })
 
@@ -35,7 +38,7 @@ const tabs = $derived([
   { href: `${base}/aging`, label: 'Aging work' },
   { href: `${base}/flow`, label: 'Cumulative flow' },
   { href: `${base}/throughput`, label: 'Throughput' },
-  { href: `${base}/wip`, label: 'Work in progress' },
+  { href: `${base}/wip`, label: 'Active work' },
   { href: `${base}/forecast`, label: 'Forecast' },
 ])
 

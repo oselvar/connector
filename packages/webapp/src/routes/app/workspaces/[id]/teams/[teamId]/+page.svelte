@@ -12,6 +12,6 @@ const { data }: { data: PageData } = $props()
 
 <IssuesLoading issues={data.issues}>
   {#snippet children(issues)}
-    <OverviewView items={issues.map((issue) => issue.workItem)} />
+    <OverviewView {issues} />
   {/snippet}
 </IssuesLoading>

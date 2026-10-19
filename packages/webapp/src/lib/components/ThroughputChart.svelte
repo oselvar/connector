@@ -1,4 +1,5 @@
 <script lang="ts">
+import StateName from '$lib/components/StateName.svelte'
 import { formatDate } from '$lib/format'
 import { scaleBand, scaleLinear } from 'd3-scale'
 
@@ -95,7 +96,7 @@ let hovered = $state<number | null>(null)
     >
       <div class="font-semibold text-gray-900">{monthDay.format(week.start)} to {formatDate(week.end)}</div>
       <div class="mt-0.5 text-gray-700">
-        {week.count === 1 ? '1 issue' : `${week.count} issues`} reached {toName}
+        {week.count === 1 ? '1 issue' : `${week.count} issues`} reached <StateName name={toName} />
       </div>
     </div>
   {/if}

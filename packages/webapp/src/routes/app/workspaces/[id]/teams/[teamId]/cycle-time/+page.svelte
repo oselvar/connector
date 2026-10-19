@@ -12,6 +12,6 @@ const { data }: { data: PageData } = $props()
 
 <IssuesLoading issues={data.issues}>
   {#snippet children(issues)}
-    <CycleTimeView items={issues.map((issue) => issue.workItem)} stages={data.stages} />
+    <CycleTimeView {issues} items={issues.map((issue) => issue.workItem)} stages={data.stages} />
   {/snippet}
 </IssuesLoading>

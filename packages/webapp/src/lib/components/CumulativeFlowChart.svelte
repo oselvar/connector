@@ -1,4 +1,5 @@
 <script lang="ts">
+import StateName from '$lib/components/StateName.svelte'
 import { formatDate, formatDuration } from '$lib/format'
 import { MILLISECONDS_PER_DAY } from '@oselvar/core'
 import { scaleLinear, scaleTime } from 'd3-scale'
@@ -16,14 +17,15 @@ export type FlowBand = {
 let {
   start,
   bands,
-  fromName,
+  started,
   toName,
   hoveredStage = $bindable(null),
 }: {
   start: Date
-  /** Top to bottom: the stages in progress, then the finished stage */
+  /** Top to bottom: the waiting stage, the active stages, then the finished stage */
   bands: readonly FlowBand[]
-  fromName: string
+  /** Cumulative count per day of issues that started: where active work begins */
+  started: readonly number[]
   toName: string
   /** The stage of the band under the pointer */
   hoveredStage?: string | null
@@ -34,7 +36,7 @@ const margin = { top: 16, right: 16, bottom: 32, left: 48 }
 
 let width = $state(800)
 
-const arrivals = $derived(bands[0].upper)
+const arrivals = $derived(started)
 const departures = $derived(bands[bands.length - 1].upper)
 const dayCount = $derived(arrivals.length)
 const dateOf = (day: number) => new Date(start.getTime() + day * MILLISECONDS_PER_DAY)
@@ -46,7 +48,7 @@ const x = $derived(
 )
 const y = $derived(
   scaleLinear()
-    .domain([0, Math.max(arrivals[dayCount - 1], 1)])
+    .domain([0, Math.max(bands[0].upper[dayCount - 1], 1)])
     .range([height - margin.bottom, margin.top])
     .nice()
 )
@@ -131,7 +133,7 @@ const crosshair = $derived.by(() => {
 
 /**
  * The horizontal line pairs the Nth issue to arrive with the Nth to finish, which are rarely the
- * same issue. It only approximates how long issues take when work in progress is steady, so
+ * same issue. It only approximates how long issues take when active work is steady, so
  * flag the days where it changed a lot over the previous 30 days.
  */
 function stability(day: number) {
@@ -149,7 +151,7 @@ function stability(day: number) {
     {height}
     class="block"
     role="img"
-    aria-label="Cumulative flow of issues from {fromName} to {toName}, by day"
+    aria-label="Cumulative flow of issues from {bands[0].stage} to {toName}, by day"
     onpointermove={onPointerMove}
     onpointerleave={onPointerLeave}
   >
@@ -233,7 +235,7 @@ function stability(day: number) {
         {/each}
       </div>
       <div class="mt-2 border-t border-gray-100 pt-2 text-gray-900">
-        <span class="font-semibold">{crosshair.wip}</span> in progress (the vertical line)
+        <span class="font-semibold">{crosshair.wip}</span> active (the vertical line)
       </div>
       <div class="mt-0.5 text-gray-900">
         {#if crosshair.leadX !== null}
@@ -242,13 +244,13 @@ function stability(day: number) {
             {crosshair.leadDays < 1 ? 'under a day' : `about ${formatDuration(crosshair.leadDays)}`} (the horizontal line)
           </div>
           {#if !crosshair.steady}
-            <div class="mt-1.5 text-gray-500">Not a reliable cycle time here: work in progress went</div>
+            <div class="mt-1.5 text-gray-500">Not a reliable cycle time here: active work went</div>
             <div class="text-gray-500">
               from {crosshair.wipBefore} to {crosshair.wip} in the {crosshair.daysBefore} days before.
             </div>
           {/if}
         {:else}
-          Nothing had reached {toName} yet
+          Nothing had reached <StateName name={toName} /> yet
         {/if}
       </div>
     </div>

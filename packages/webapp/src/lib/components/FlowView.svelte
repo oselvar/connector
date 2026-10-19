@@ -1,19 +1,33 @@
 <script lang="ts">
 import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
 import CumulativeFlowChart, { type FlowBand } from '$lib/components/CumulativeFlowChart.svelte'
+import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
+import StateName from '$lib/components/StateName.svelte'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { type WorkItem, calculateCumulativeFlow } from '@oselvar/core'
+import type { LinearWorkItem } from '@oselvar/linear'
 
-const { items, stages }: { items: readonly WorkItem<string>[]; stages: readonly string[] } = $props()
+const {
+  items,
+  issues,
+  stages,
+}: {
+  items: readonly WorkItem<string>[]
+  /** The same issues, with who they are assigned to, for the coach */
+  issues: readonly LinearWorkItem[]
+  stages: readonly string[]
+} = $props()
 
 const range = getStageRange()
 let hoveredStage = $state<string | null>(null)
 const now = new Date()
 
-const fromName = $derived(stages[range.from])
+// Where work waits
+const queueName = $derived(stages[range.from])
 const toName = $derived(stages[range.to])
-const flow = $derived(calculateCumulativeFlow(items, stages, fromName, toName, now))
+// One line per stage from the queue to the finish: the queue's band shows work waiting
+const flow = $derived(calculateCumulativeFlow(items, stages, queueName, toName, now))
 
 // One sequential hue for the stages in progress, lighter to darker in workflow order; Done is neutral.
 // Plain colors rather than Tailwind classes, since these are picked at runtime.
@@ -25,17 +39,19 @@ const ramp = [
   { color: '#4f46e5' },
 ]
 const doneColors = { color: '#e5e7eb' }
+const waitingColors = { color: '#e0e7ff' }
 
 const bands: FlowBand[] = $derived.by(() => {
   if (!flow) return []
   const lines = flow.lines
-  const inProgress = lines.length - 1
+  const active = lines.length - 2
   return [
-    ...lines.slice(0, -1).map((line, i) => ({
+    { stage: queueName, upper: lines[0].counts, lower: lines[1].counts, ...waitingColors },
+    ...lines.slice(1, -1).map((line, i) => ({
       stage: line.stage,
       upper: line.counts,
-      lower: lines[i + 1].counts,
-      ...(inProgress === 1 ? ramp[3] : ramp[Math.round((i / (inProgress - 1)) * (ramp.length - 1))]),
+      lower: lines[i + 2].counts,
+      ...(active === 1 ? ramp[3] : ramp[Math.round((i / (active - 1)) * (ramp.length - 1))]),
     })),
     { stage: toName, upper: lines[lines.length - 1].counts, lower: null, ...doneColors },
   ]
@@ -44,7 +60,7 @@ const bands: FlowBand[] = $derived.by(() => {
 // Is work starting faster than it finishes, over the last 30 days?
 const summary = $derived.by(() => {
   if (!flow) return undefined
-  const arrivals = flow.lines[0].counts
+  const arrivals = flow.lines[1].counts
   const departures = flow.lines[flow.lines.length - 1].counts
   const last = arrivals.length - 1
   const days = Math.min(30, last)
@@ -72,21 +88,21 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
     {/if}
   </p>
   <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
-    In the last {summary.days} days, {plural(summary.started, 'issue', 'issues')} reached {fromName} and
-    {summary.finished} reached {toName}. {summary.wipNow} {summary.wipNow === 1 ? 'is' : 'are'} in progress now,
+    In the last {summary.days} days, {plural(summary.started, 'issue', 'issues')} started and
+    {summary.finished} finished. {summary.wipNow} {summary.wipNow === 1 ? 'is' : 'are'} active now,
     {summary.wipNow === summary.wipThen
       ? 'the same as'
       : `${summary.wipNow > summary.wipThen ? 'up' : 'down'} from ${summary.wipThen}`}
-    {summary.days} days ago.
+    {summary.days} days ago. <RangeExplanation queue={queueName} finish={toName} />
   </p>
 {:else}
   <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-    No issues have reached {fromName} yet.
+    No issues have reached <StateName name={queueName} /> yet.
   </p>
-  <p class="mt-3.5 text-base text-gray-600">Move the start handle to an earlier stage.</p>
+  <p class="mt-3.5 text-base text-gray-600">Move the left handle to an earlier stage.</p>
 {/if}
 
-<ChartCoachNote items={items} chart="flow" />
+<ChartCoachNote {issues} chart="flow" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
   <StageRange {stages} bind:from={range.from} bind:to={range.to} />
@@ -105,12 +121,12 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
         </span>
       {/each}
     </div>
-    <p class="text-[13px] text-gray-500">Hover the chart to see work in progress and time in process on any day</p>
+    <p class="text-[13px] text-gray-500">Hover the chart to see active work and time in process on any day</p>
   </div>
 
   {#if flow}
     <div class="mt-3">
-      <CumulativeFlowChart start={flow.start} {bands} {fromName} {toName} bind:hoveredStage />
+      <CumulativeFlowChart start={flow.start} {bands} started={flow.lines[1].counts} {toName} bind:hoveredStage />
     </div>
   {/if}
 </section>

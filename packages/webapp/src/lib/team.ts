@@ -5,8 +5,10 @@ export type TeamContext = {
   workspaceId: string
   teamId: string
   stages: readonly string[]
-  /** Where work counts as started, if the workflow has such a stage */
-  commitmentStage: string | undefined
+  /** States the workflow itself marks as not started */
+  notStartedStages: readonly string[]
+  /** How many active people are on the team */
+  teamSize: number
 }
 
 const key = Symbol('team')

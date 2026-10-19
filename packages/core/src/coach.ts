@@ -49,13 +49,21 @@ export type CoachSeries = {
 export type CoachInput = {
   items: readonly StagedItem[]
   stages: readonly string[]
+  /** Where work waits before it starts. Issues there are waiting, not active. */
+  queueStage: string
+  /** The first active stage: an issue starts when it reaches this stage or a later one */
   fromStage: string
+  /** Where work is finished */
   toStage: string
-  /** The first stage where work counts as started, if the workflow has one */
-  commitmentStage: string | undefined
+  /** Stages the workflow itself marks as not started, like Linear's backlog and unstarted states */
+  notStartedStages?: readonly string[]
   now: Date
   /** A short name for an item, like its issue key */
   identify: (item: StagedItem) => string
+  /** How many people are on the team, if known */
+  teamSize?: number
+  /** Who an item is assigned to, if anyone */
+  assigneeOf?: (item: StagedItem) => string | undefined
 }
 
 const MONTH = 30 * DAY
@@ -78,11 +86,13 @@ export function coach(input: CoachInput): CoachFinding[] {
     monthAgo: now - MONTH,
   }
   const checks = [
-    beforeCommitment,
+    notStartedButActive,
     nothingFinished,
+    workInProgressPerPerson,
     workInProgress,
     oldItems,
     waitingInStage,
+    longQueue,
     cycleTimeTrend,
     throughputTrend,
     spread,
@@ -90,7 +100,7 @@ export function coach(input: CoachInput): CoachFinding[] {
   const findings = checks.map((check) => check(context)).filter((f): f is CoachFinding => f !== null)
 
   // The range comes first, since it changes how to read everything else; then most urgent first
-  const rank = (f: CoachFinding) => (f.id === 'before-commitment' ? -1 : { act: 0, watch: 1, good: 2 }[f.status])
+  const rank = (f: CoachFinding) => (f.id === 'not-started-but-active' ? -1 : { act: 0, watch: 1, good: 2 }[f.status])
   return findings.sort((a, b) => rank(a) - rank(b))
 }
 
@@ -107,22 +117,34 @@ function dayEnds(now: number, days = SERIES_DAYS): number[] {
 const trendOf = (now: number, then: number, higherIsWorse = true): CoachTrend =>
   now === then ? 'same' : now > then === higherIsWorse ? 'worse' : 'better'
 
-function beforeCommitment({ input, timeline, now }: Context): CoachFinding | null {
-  const { stages, fromStage, commitmentStage } = input
-  if (!commitmentStage || stages.indexOf(fromStage) >= stages.indexOf(commitmentStage)) return null
+/** "Backlog", "Backlog and Todo", "Triage, Backlog and Todo" */
+function joinNames(names: readonly string[]): string {
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
+/** Active stages that the workflow itself says are not started */
+function notStartedActiveStages({ input, timeline }: Context): string[] {
+  return timeline.stages.slice(0, -1).filter((stage) => input.notStartedStages?.includes(stage))
+}
+
+function notStartedButActive(context: Context): CoachFinding | null {
+  const { timeline, now } = context
+  const notStarted = notStartedActiveStages(context)
+  if (notStarted.length === 0) return null
 
   const wip = inProgressAt(timeline, now)
-  const commitment = stages.indexOf(commitmentStage)
-  const waiting = wip.filter((w) => stages.indexOf(w.stage) < commitment).length
+  const count = wip.filter((w) => notStarted.includes(w.stage)).length
+  const names = joinNames(notStarted)
+  const last = notStarted[notStarted.length - 1]
   return {
-    id: 'before-commitment',
+    id: 'not-started-but-active',
     status: 'watch',
     trend: null,
-    headline: `Move the start of the range to ${commitmentStage} for advice about work that has started.`,
-    title: `The range starts at ${fromStage}, before work has started`,
-    seen: `${plural(waiting, 'issue', 'issues')} of the ${wip.length} counted as in progress ${waiting === 1 ? 'is' : 'are'} waiting before ${commitmentStage}.`,
-    why: 'Issues there are ideas waiting to be picked, not work the team has started. Counting them makes work look like it is piling up when it may not be, and makes cycle times look longer.',
-    action: `Move the left handle to ${commitmentStage} to see the work the team has committed to.`,
+    headline: `Move the left handle to ${last}, so only started work counts as active.`,
+    title: `${names} ${notStarted.length === 1 ? 'is' : 'are'} counted as active, but work hasn't started there`,
+    seen: `${plural(count, 'issue', 'issues')} of the ${wip.length} active ${count === 1 ? 'is' : 'are'} in ${names}, which your workflow marks as not started.`,
+    why: 'Issues there are waiting to be picked up, not being worked on. Counting them as active makes work look like it is piling up when it may not be, and makes cycle times look longer.',
+    action: `Move the left handle to ${last}. Issues there will count as waiting, and work will start when it moves past it.`,
     chart: 'flow',
     series: null,
   }
@@ -140,17 +162,80 @@ function nothingFinished({ input, timeline, now }: Context): CoachFinding | null
     trend: finishedBetween(timeline, now - 2 * WEEK, now - WEEK).length > 0 ? 'worse' : 'same',
     headline: 'Nothing has finished in a week. Find out what is stuck.',
     title: 'Nothing has finished in the last week',
-    seen: `${plural(wip, 'issue is', 'issues are')} in progress, but none reached ${input.toStage} in the last 7 days.${
+    seen: `${plural(wip, 'issue is', 'issues are')} active, but none reached ${input.toStage} in the last 7 days.${
       lastFinished === null ? '' : ` The last one finished ${formatDuration((now - lastFinished) / DAY)} ago.`
     }`,
-    why: 'When nothing finishes, the team gets no feedback, and everything in progress keeps getting older.',
+    why: 'When nothing finishes, the team gets no feedback, and everything active keeps getting older.',
     action: 'Look at the oldest issues on the aging chart together, and agree on one to finish first.',
     chart: 'aging',
     series: null,
   }
 }
 
-function workInProgress({ input, timeline, now, monthAgo }: Context): CoachFinding | null {
+function workInProgressPerPerson({ input, timeline, now, monthAgo }: Context): CoachFinding | null {
+  const { teamSize } = input
+  // Per person makes no sense while waiting work counts as active; notStartedButActive covers that
+  if (!teamSize || notStartedActiveStages({ input, timeline, now, monthAgo }).length > 0) return null
+  const wip = inProgressAt(timeline, now)
+  if (wip.length === 0) return null
+
+  const perPerson = wip.length / teamSize
+  const perPersonThen = inProgressAt(timeline, monthAgo).length / teamSize
+  const each = (n: number) => (n < 10 ? Math.round(n * 10) / 10 : Math.round(n))
+
+  // Who has how many, most first
+  const byPerson = new Map<string, number>()
+  let unassigned = 0
+  for (const { item } of wip) {
+    const person = input.assigneeOf?.(item)
+    if (person) byPerson.set(person, (byPerson.get(person) ?? 0) + 1)
+    else unassigned++
+  }
+  const people = [...byPerson].sort((a, b) => b[1] - a[1]).map(([person, count]) => `${person} ${count}`)
+  const breakdown = input.assigneeOf
+    ? ` By person: ${[...people, ...(unassigned > 0 ? [`nobody ${unassigned}`] : [])].join(', ')}.`
+    : ''
+  const seen = `${plural(wip.length, 'issue is', 'issues are')} active for ${plural(teamSize, 'person', 'people')} on the team: about ${each(perPerson)} each.${breakdown}`
+  const series = {
+    recent: 30,
+    values: dayEnds(now).map((end) => inProgressAt(timeline, end).length / teamSize),
+    caption: `Active issues per person: ${each(perPersonThen)} a month ago, ${each(perPerson)} today`,
+  }
+
+  if (perPerson <= 2) {
+    return {
+      id: 'work-in-progress-per-person',
+      status: 'good',
+      trend: trendOf(perPerson, perPersonThen),
+      headline: 'Active work fits the team.',
+      title: 'Active work fits the team',
+      seen,
+      why: 'With one or two issues each, people can focus, and work keeps moving.',
+      action: 'Keep it there: finish something before starting something new.',
+      chart: 'wip',
+      series,
+    }
+  }
+  return {
+    id: 'work-in-progress-per-person',
+    status: perPerson > 3 ? 'act' : 'watch',
+    trend: trendOf(perPerson, perPersonThen),
+    headline: 'Too much is active at once. Pick what to finish, and pause the rest.',
+    title: `About ${each(perPerson)} active issues per person`,
+    seen,
+    why: 'Nobody works on more than one or two things at a time, so most of these are waiting. Waiting work gets old, hides problems, and makes every issue take longer.',
+    action: `Each person picks the one or two issues they will finish next, and ${pauseTheRest(input)}. Then agree on a limit, like two per person.`,
+    chart: 'wip',
+    series,
+  }
+}
+
+/** How to pause work, in the team's own state names */
+function pauseTheRest({ queueStage, fromStage }: CoachInput): string {
+  return `moves the rest back to ${queueStage}, so ${fromStage} and later show what people are actually working on`
+}
+
+function workInProgress({ timeline, now, monthAgo }: Context): CoachFinding | null {
   const wipNow = inProgressAt(timeline, now).length
   const wipThen = inProgressAt(timeline, monthAgo).length
   if (wipNow === 0 && wipThen === 0) return null
@@ -161,11 +246,11 @@ function workInProgress({ input, timeline, now, monthAgo }: Context): CoachFindi
   }).length
   const finished = finishedBetween(timeline, monthAgo, now).length
   const change = wipNow === wipThen ? 'the same as' : `${wipNow > wipThen ? 'up' : 'down'} from`
-  const seen = `In the last 30 days, ${plural(started, 'issue', 'issues')} reached ${input.fromStage} and ${finished} reached ${input.toStage}. ${wipNow} ${wipNow === 1 ? 'is' : 'are'} in progress now, ${change} ${wipThen} a month ago.`
+  const seen = `In the last 30 days, ${plural(started, 'issue', 'issues')} started and ${finished} finished. ${wipNow} ${wipNow === 1 ? 'is' : 'are'} active now, ${change} ${wipThen} a month ago.`
   const series = {
     recent: 30,
     values: dayEnds(now).map((end) => inProgressAt(timeline, end).length),
-    caption: `Issues in progress: ${wipThen} a month ago, ${wipNow} today`,
+    caption: `Active issues: ${wipThen} a month ago, ${wipNow} today`,
   }
   const threshold = Math.max(3, wipThen * 0.25)
 
@@ -177,9 +262,9 @@ function workInProgress({ input, timeline, now, monthAgo }: Context): CoachFindi
       headline: "Work is piling up. Finish what you've started before starting more.",
       title: 'More work is starting than finishing',
       seen,
-      why: 'When more work is in progress, every issue waits longer for attention. Growing work in progress is the most common reason teams slow down, and it shows up in cycle times a few weeks later.',
+      why: 'When more work is active, every issue waits longer for attention. A growing amount of active work is the most common reason teams slow down, and it shows up in cycle times a few weeks later.',
       action:
-        'Agree as a team to finish something before starting something new. Try a simple limit, like no more issues in progress than there are people on the team.',
+        'Agree as a team to finish something before starting something new. Try a simple limit, like no more active issues than there are people on the team.',
       chart: 'flow',
       series,
     }
@@ -189,10 +274,10 @@ function workInProgress({ input, timeline, now, monthAgo }: Context): CoachFindi
       id: 'work-in-progress',
       status: 'good',
       trend: 'better',
-      headline: 'Work in progress is coming down.',
-      title: 'Work in progress is coming down',
+      headline: 'Active work is coming down.',
+      title: 'Active work is coming down',
       seen,
-      why: 'With less work in progress, each issue gets more attention and finishes sooner. Cycle times usually follow within a few weeks.',
+      why: 'With less active work, each issue gets more attention and finishes sooner. Cycle times usually follow within a few weeks.',
       action: 'Keep finishing before starting. Watch the cycle time chart for the improvement to show.',
       chart: 'flow',
       series,
@@ -203,7 +288,7 @@ function workInProgress({ input, timeline, now, monthAgo }: Context): CoachFindi
     status: 'good',
     trend: 'same',
     headline: 'Work is flowing steadily.',
-    title: 'Work in progress is steady',
+    title: 'Active work is steady',
     seen,
     why: "When about as much work finishes as starts, issues don't queue up, and past cycle times are a good guide to future ones.",
     action: 'Keep it that way: start new work when something finishes.',
@@ -239,9 +324,9 @@ function oldItems({ input, timeline, now, monthAgo }: Context): CoachFinding | n
       id: 'old-items',
       status: 'good',
       trend: trendOf(0, overdueThen),
-      headline: 'Nothing in progress is unusually old.',
-      title: 'Nothing in progress is unusually old',
-      seen: `Every issue in progress is younger than 85% of finished issues were when they finished (${formatDuration(p85)}).`,
+      headline: 'No active issue is unusually old.',
+      title: 'No active issue is unusually old',
+      seen: `Every active issue is younger than 85% of finished issues were when they finished (${formatDuration(p85)}).`,
       why: 'Work that keeps moving rarely surprises anyone.',
       action: 'Keep an eye on the aging chart, and help any issue that gets close to the 85% line.',
       chart: 'aging',
@@ -257,7 +342,7 @@ function oldItems({ input, timeline, now, monthAgo }: Context): CoachFinding | n
     trend: trendOf(overdue.length, overdueThen),
     headline: 'Some issues are getting old. Help them finish.',
     title: `${plural(overdue.length, 'issue is', 'issues are')} older than 85% of finished work`,
-    seen: `${overdue.length === 1 ? 'It has' : 'They have'} been in progress longer than 85% of finished issues took (${formatDuration(p85)}). The oldest, ${name}, has been going for ${formatDuration(oldest.ageDays)} and is in ${oldest.stage}.`,
+    seen: `${overdue.length === 1 ? 'It has' : 'They have'} been active longer than 85% of finished issues took (${formatDuration(p85)}). The oldest, ${name}, has been going for ${formatDuration(oldest.ageDays)} and is in ${oldest.stage}.`,
     why: 'The older an issue gets, the less likely it is to finish soon. Old issues are usually blocked, too big, or forgotten.',
     action: `Start each day with the oldest issues rather than the newest. Ask what is stopping ${name}, and whether it should be split up or worked on together.`,
     chart: 'aging',
@@ -266,9 +351,8 @@ function oldItems({ input, timeline, now, monthAgo }: Context): CoachFinding | n
 }
 
 function waitingInStage({ input, timeline, now, monthAgo }: Context): CoachFinding | null {
-  // Stages before work has started are lists of ideas, not queues; before-commitment covers them
-  const commitment = input.commitmentStage ? input.stages.indexOf(input.commitmentStage) : -1
-  const inProgressStages = timeline.stages.slice(0, -1).filter((stage) => input.stages.indexOf(stage) >= commitment)
+  // Stages the workflow marks as not started are lists of ideas, not queues; notStartedButActive covers them
+  const inProgressStages = timeline.stages.slice(0, -1).filter((stage) => !input.notStartedStages?.includes(stage))
   if (inProgressStages.length < 2) return null
 
   const growth = inProgressStages
@@ -314,6 +398,36 @@ function waitingInStage({ input, timeline, now, monthAgo }: Context): CoachFindi
   }
 }
 
+function longQueue({ input, now, monthAgo }: Context): CoachFinding | null {
+  // Waiting means having reached the queue stage, but not yet started
+  const queue = makeFlowTimeline(input.items, input.stages, input.queueStage, input.fromStage)
+  const waitingAt = (time: number) => inProgressAt(queue, time)
+  const waiting = waitingAt(now)
+  if (waiting.length < 20) return null
+  const ages = waiting.map((w) => w.ageDays)
+  const median = percentile(ages, 50) as number
+  if (median <= 30) return null
+
+  const waitingThen = waitingAt(monthAgo).length
+  const old = ages.filter((age) => age > 30).length
+  return {
+    id: 'long-queue',
+    status: 'watch',
+    trend: trendOf(waiting.length, waitingThen),
+    headline: `${input.queueStage} is getting long. Close what you won't do.`,
+    title: `${waiting.length} issues are waiting in ${input.queueStage}`,
+    seen: `Half of them have waited more than ${formatDuration(median)}, and ${old} for over 30 days. A month ago, ${waitingThen} issues were waiting.`,
+    why: 'A long queue hides what matters. Most issues that have waited this long will never be done, and they cost attention every time someone looks through them.',
+    action: `Go through ${input.queueStage} together and close the issues you won't do. Keep only what you would start in the next month or two.`,
+    chart: 'flow',
+    series: {
+      recent: 30,
+      values: dayEnds(now).map((end) => waitingAt(end).length),
+      caption: `Issues waiting in ${input.queueStage}: ${waitingThen} a month ago, ${waiting.length} today`,
+    },
+  }
+}
+
 function cycleTimeTrend({ timeline, now, monthAgo }: Context): CoachFinding | null {
   const p85Between = (from: number, to: number) => {
     const times = finishedBetween(timeline, from, to).map((f) => f.cycleTimeDays)
@@ -336,12 +450,12 @@ function cycleTimeTrend({ timeline, now, monthAgo }: Context): CoachFinding | nu
       id: 'cycle-time',
       status: 'watch',
       trend: 'worse',
-      headline: 'Issues are taking longer. Bring work in progress down.',
+      headline: 'Issues are taking longer. Bring active work down.',
       title: 'Issues are taking longer to finish',
       seen,
       why: "This is the number to plan with. If it keeps rising, promises made from last month's numbers will be missed.",
       action:
-        'Bring work in progress down first, and help the oldest issues finish. Cycle times usually follow a few weeks later.',
+        'Bring active work down first, and help the oldest issues finish. Cycle times usually follow a few weeks later.',
       chart: 'cycle-time',
       series,
     }

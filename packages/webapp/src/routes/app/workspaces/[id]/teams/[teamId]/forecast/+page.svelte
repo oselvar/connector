@@ -12,6 +12,6 @@ const { data }: { data: PageData } = $props()
 
 <IssuesLoading issues={data.issues}>
   {#snippet children(issues)}
-    <ForecastView items={issues.map((issue) => issue.workItem)} />
+    <ForecastView {issues} items={issues.map((issue) => issue.workItem)} />
   {/snippet}
 </IssuesLoading>

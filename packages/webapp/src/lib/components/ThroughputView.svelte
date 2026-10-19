@@ -1,19 +1,31 @@
 <script lang="ts">
 import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
+import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
+import StateName from '$lib/components/StateName.svelte'
 import ThroughputChart, { type ThroughputWeek } from '$lib/components/ThroughputChart.svelte'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { getTeam } from '$lib/team'
 import { MILLISECONDS_PER_DAY, type WorkItem, finishedBetween, makeFlowTimeline, percentile } from '@oselvar/core'
+import type { LinearWorkItem } from '@oselvar/linear'
 
-const { items }: { items: readonly WorkItem<string>[] } = $props()
+const {
+  items,
+  issues,
+}: {
+  items: readonly WorkItem<string>[]
+  /** The same issues, with who they are assigned to, for the coach */
+  issues: readonly LinearWorkItem[]
+} = $props()
 
 const team = getTeam()
 const range = getStageRange()
 const now = Date.now()
 const WEEK = 7 * MILLISECONDS_PER_DAY
 
-const fromName = $derived(team.stages[range.from])
+// Where work waits, and the first stage where it is active
+const queueName = $derived(team.stages[range.from])
+const fromName = $derived(team.stages[range.from + 1])
 const toName = $derived(team.stages[range.to])
 
 // Weeks ending today, back to the week of the first finished issue
@@ -43,21 +55,21 @@ const typical = $derived(percentile(recent, 50) ?? 0)
     {typical === 1 ? 'issue' : 'issues'} a week.
   </p>
   <p class="mt-3.5 max-w-[62ch] text-base leading-normal text-gray-600">
-    In the last {recent.length} weeks, between {Math.min(...recent)} and {Math.max(...recent)} issues reached {toName}
-    each week, counting issues that started at {fromName} or later.
+    In the last {recent.length} weeks, between {Math.min(...recent)} and {Math.max(...recent)} issues reached <StateName name={toName} />
+    each week. <RangeExplanation queue={queueName} finish={toName} />
   </p>
 {:else}
   <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
-    No issues have reached {toName} yet.
+    No issues have reached <StateName name={toName} /> yet.
   </p>
 {/if}
 
-<ChartCoachNote {items} chart="throughput" />
+<ChartCoachNote {issues} chart="throughput" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
   <StageRange stages={team.stages} bind:from={range.from} bind:to={range.to} />
   <p class="mt-5 border-t border-gray-100 pt-4 text-sm text-gray-600">
-    Issues that reached {toName} each week. Hover a bar to see the week.
+    Issues that reached <StateName name={toName} /> each week. Hover a bar to see the week.
   </p>
   {#if weeks.length > 0}
     <div class="mt-3"><ThroughputChart {weeks} {toName} /></div>

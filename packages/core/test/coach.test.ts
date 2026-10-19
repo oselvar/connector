@@ -16,13 +16,13 @@ function steady(): StagedItem[] {
   }))
 }
 
-const run = (items: StagedItem[], fromStage = 'In Progress') =>
+const run = (items: StagedItem[]) =>
   coach({
     items,
     stages,
-    fromStage,
+    queueStage: 'Backlog',
+    fromStage: 'In Progress',
     toStage: 'Done',
-    commitmentStage: 'In Progress',
     now,
     identify: (item) => item.name ?? item.id,
   })
@@ -54,25 +54,70 @@ describe('coach', () => {
     expect(coachHeadline(findings)).toBe("Work is piling up. Finish what you've started before starting more.")
   })
 
-  it('points out when the range starts before work has started', () => {
-    const findings = run([...steady(), { id: 'idea', Backlog: daysAgo(3) }], 'Backlog')
+  it('points out when states the workflow marks as not started are counted as active', () => {
+    const findings = coach({
+      items: [{ id: 'planned', Todo: daysAgo(3) }],
+      stages: ['Backlog', 'Todo', 'In Progress', 'Done'],
+      queueStage: 'Backlog',
+      fromStage: 'Todo',
+      toStage: 'Done',
+      notStartedStages: ['Backlog', 'Todo'],
+      now,
+      identify: (item) => item.id,
+    })
 
     expect(findings[0]).toMatchObject({
-      id: 'before-commitment',
-      seen: '1 issue of the 1 counted as in progress is waiting before In Progress.',
+      id: 'not-started-but-active',
+      title: "Todo is counted as active, but work hasn't started there",
+      seen: '1 issue of the 1 active is in Todo, which your workflow marks as not started.',
+      action:
+        'Move the left handle to Todo. Issues there will count as waiting, and work will start when it moves past it.',
     })
   })
 
-  it('says which stage work is waiting in, but not for stages before work has started', () => {
+  it('suggests closing old issues when the queue gets long', () => {
+    const ideas = Array.from({ length: 25 }, (_, i) => ({ id: `idea-${i}`, Backlog: daysAgo(20 + 2 * i) }))
+    const finding = run([...steady(), ...ideas]).find((f) => f.id === 'long-queue')
+
+    expect(finding).toMatchObject({
+      status: 'watch',
+      trend: 'worse',
+      title: '25 issues are waiting in Backlog',
+      seen: 'Half of them have waited more than 44 days, and 19 for over 30 days. A month ago, 20 issues were waiting.',
+    })
+  })
+
+  it('says which stage work is waiting in', () => {
     const inReview = Array.from({ length: 8 }, (_, i) => ({
       id: `review-${i}`,
       'In Progress': daysAgo(12 + i),
       'In Review': daysAgo(10),
     }))
-    const ideas = Array.from({ length: 20 }, (_, i) => ({ id: `idea-${i}`, Backlog: daysAgo(i) }))
 
     expect(run([...steady(), ...inReview]).map((f) => f.title)).toContain('Work is waiting in In Review')
-    expect(run([...steady(), ...ideas], 'Backlog').map((f) => f.title)).not.toContain('Work is waiting in Backlog')
+  })
+
+  it('warns when there is much more in progress than people to work on it', () => {
+    const owners = ['aslak', 'aslak', 'aslak', 'eivind', 'eivind', undefined, undefined]
+    const wip = owners.map((owner, i) => ({ id: `wip-${i}`, name: owner, 'In Progress': daysAgo(1) }))
+    const findings = coach({
+      items: [...steady(), ...wip],
+      stages,
+      queueStage: 'Backlog',
+      fromStage: 'In Progress',
+      toStage: 'Done',
+      now,
+      identify: (item) => item.id,
+      teamSize: 2,
+      assigneeOf: (item) => (item.id.startsWith('wip-') ? item.name : undefined),
+    })
+
+    expect(findings[0]).toMatchObject({
+      id: 'work-in-progress-per-person',
+      status: 'act',
+      title: 'About 3.5 active issues per person',
+      seen: '7 issues are active for 2 people on the team: about 3.5 each. By person: aslak 3, eivind 2, nobody 2.',
+    })
   })
 
   it('notices when nothing has finished for a week', () => {
