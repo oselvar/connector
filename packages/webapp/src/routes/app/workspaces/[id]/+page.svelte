@@ -51,7 +51,12 @@ function copyShareLink() {
         {#each data.teams as team}
           <li class="flex items-center justify-between p-4">
             <div>
-              <p class="font-medium text-gray-900">{team.linear_team_name}</p>
+              <a
+                href="/app/workspaces/{data.workspace.id}/teams/{team.id}"
+                class="font-medium text-indigo-600 hover:text-indigo-800"
+              >
+                {team.linear_team_name} cycle time
+              </a>
               <p class="text-sm text-gray-500">{team.linear_team_key}</p>
             </div>
             <div class="flex items-center gap-3">

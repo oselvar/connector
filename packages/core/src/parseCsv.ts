@@ -1,4 +1,4 @@
-import { csvParse } from 'd3-dsv'
+import { csvParse, csvParseRows } from 'd3-dsv'
 
 export type ParsedWorkItem = {
   id: string
@@ -32,4 +32,13 @@ export function parseCsv(csvString: string): ParsedWorkItem[] {
 
     return item
   })
+}
+
+/**
+ * The stage columns of a CSV string (all columns except 'id' and 'name'), in header order.
+ */
+export function parseCsvStages(csvString: string): string[] {
+  const header =
+    csvParseRows(csvString.slice(0, csvString.indexOf('\n') === -1 ? undefined : csvString.indexOf('\n')))[0] ?? []
+  return header.filter((column) => column !== 'id' && column !== 'name')
 }

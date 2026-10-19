@@ -26,7 +26,32 @@
     }
   },
   "files": {
-    "include": ["packages/**", "*.ts"],
-    "ignore": ["**/dist/**", "**/node_modules/**", "**/.svelte-kit/**"]
-  }
+    "include": [
+      "packages/**",
+      "*.ts"
+    ],
+    "ignore": [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.svelte-kit/**"
+    ]
+  },
+  "overrides": [
+    {
+      "include": [
+        "**/*.svelte"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useConst": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          }
+        }
+      }
+    }
+  ]
 }

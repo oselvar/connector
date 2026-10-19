@@ -1,0 +1,127 @@
+<script lang="ts">
+import CycleTimeScatter, { type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
+import StageRange from '$lib/components/StageRange.svelte'
+import { formatDate, formatDuration, formatMonth, issueIdentifier } from '$lib/format'
+import { type WorkItem, calculateCycleTimes, percentile } from '@oselvar/core'
+
+const {
+  items,
+  stages,
+  defaultFrom,
+  defaultTo,
+}: {
+  items: readonly WorkItem<string>[]
+  stages: readonly string[]
+  defaultFrom: number
+  defaultTo: number
+} = $props()
+
+// svelte-ignore state_referenced_locally
+let from = $state(defaultFrom)
+// svelte-ignore state_referenced_locally
+let to = $state(defaultTo)
+let log = $state(false)
+
+const fromName = $derived(stages[from])
+const toName = $derived(stages[to])
+
+const points: ScatterPoint[] = $derived(
+  calculateCycleTimes(items, stages, fromName, toName)
+    .map((item) => ({
+      identifier: issueIdentifier(item.name ?? item.id),
+      url: item.name ?? '',
+      completionDate: item.completionDate,
+      cycleTimeDays: item.cycleTimeDays,
+    }))
+    .sort((a, b) => a.completionDate.getTime() - b.completionDate.getTime())
+)
+
+const days = $derived(points.map((p) => p.cycleTimeDays))
+const p50 = $derived(percentile(days, 50) ?? 0)
+const p85 = $derived(percentile(days, 85) ?? 0)
+const p95 = $derived(percentile(days, 95) ?? 0)
+const percentiles = $derived([
+  { percentile: 50, days: p50, emphasis: false },
+  { percentile: 85, days: p85, emphasis: true },
+  { percentile: 95, days: p95, emphasis: false },
+])
+
+const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cycleTimeDays))
+</script>
+
+{#if points.length > 0}
+  <p class="mt-5 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
+    85% of issues went from {fromName} to {toName} within {formatDuration(p85)}.
+  </p>
+  <p class="mt-3.5 max-w-[60ch] text-base leading-normal text-gray-600">
+    Based on {points.length}
+    {points.length === 1 ? 'issue' : 'issues'} that reached {toName} between {formatMonth(points[0].completionDate)}
+    and {formatMonth(points[points.length - 1].completionDate)}. Half took {formatDuration(p50)} or less, and 1 in 20 took
+    longer than {formatDuration(p95)}.
+  </p>
+{:else}
+  <p class="mt-5 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
+    No issues have gone from {fromName} to {toName} yet.
+  </p>
+  <p class="mt-3.5 text-base text-gray-600">Move the handles further apart, or wait for more issues to finish.</p>
+{/if}
+
+<section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
+  <StageRange {stages} bind:from bind:to />
+
+  <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+    <p class="text-sm text-gray-600">Days from {fromName} to {toName}, by the date each issue reached {toName}</p>
+    <div class="flex overflow-hidden rounded-lg border border-gray-300 text-[13px]" role="group" aria-label="Scale">
+      {#each [false, true] as isLog}
+        <button
+          type="button"
+          class="cursor-pointer px-3.5 py-1.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-600 {isLog
+            ? 'border-l border-gray-300'
+            : ''} {log === isLog ? 'bg-indigo-50 font-semibold text-indigo-800' : 'bg-white text-gray-600'}"
+          aria-pressed={log === isLog}
+          onclick={() => (log = isLog)}
+        >
+          {isLog ? 'Log' : 'Linear'}
+        </button>
+      {/each}
+    </div>
+  </div>
+
+  {#if points.length > 0}
+    <div class="mt-3">
+      <CycleTimeScatter {points} {percentiles} {log} {fromName} {toName} />
+    </div>
+  {/if}
+</section>
+
+{#if points.length > 0}
+  <details class="mt-4 text-sm text-gray-600">
+    <summary class="cursor-pointer py-2">Show these issues as a table</summary>
+    <div class="mt-2 max-h-80 overflow-auto rounded-xl bg-white">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="text-left text-gray-500">
+            <th class="px-4 py-2.5 font-medium">Issue</th>
+            <th class="px-4 py-2.5 font-medium">Reached {toName}</th>
+            <th class="px-4 py-2.5 text-right font-medium">Days</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each slowestFirst as point}
+            <tr class="border-t border-gray-100">
+              <td class="px-4 py-2">
+                <a href={point.url} target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-800">
+                  {point.identifier}
+                </a>
+              </td>
+              <td class="px-4 py-2">{formatDate(point.completionDate)}</td>
+              <td class="px-4 py-2 text-right tabular-nums">
+                {point.cycleTimeDays < 10 ? point.cycleTimeDays.toFixed(1) : Math.round(point.cycleTimeDays)}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  </details>
+{/if}

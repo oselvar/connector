@@ -1,8 +1,8 @@
 import { getWorkspaceTeam } from '$lib/server/db'
-import { getLinearAccessToken } from '$lib/server/linear'
+import { openTeam } from '$lib/server/linear'
 import { requireWorkspaceMember } from '$lib/server/workspace'
 import { makeCsvTransform, makeMapFromString, orderedMapValues } from '@oselvar/core'
-import { LinearClient, createLinearWorkItemStream, makeDefaultStageMap } from '@oselvar/linear'
+import { createLinearWorkItemStream } from '@oselvar/linear'
 import { error } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
@@ -18,16 +18,9 @@ export const GET: RequestHandler = async ({ params, platform, locals, url }) => 
     error(404, 'Team not found')
   }
 
-  // Use the token of whoever added the team, so all workspace members can export it
-  const token = await getLinearAccessToken(db, env, team.added_by_user_id)
-  if (!token) {
-    error(409, 'The user who added this team has disconnected Linear')
-  }
-
-  const client = new LinearClient(team.linear_team_key, token)
-  const states = await client.fetchWorkflowStates()
+  const { client, states, defaultStageMap } = await openTeam(db, env, team)
   const stagesParam = url.searchParams.get('stages')
-  const stageMap = stagesParam ? makeMapFromString(stagesParam) : makeDefaultStageMap(states)
+  const stageMap = stagesParam ? makeMapFromString(stagesParam) : defaultStageMap
 
   const csv = createLinearWorkItemStream(client, states, stageMap)
     .pipeThrough(makeCsvTransform(orderedMapValues(stageMap)))

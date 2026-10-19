@@ -1,7 +1,9 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { LinearClient, type LinearWorkflowState, makeDefaultStageMap } from '@oselvar/linear'
+import { error } from '@sveltejs/kit'
 import { OAuth2Client, type OAuth2Tokens } from 'arctic'
-import { type LinearTokens, getUserById, updateUserLinearTokens } from './db'
+import { type DbTeam, type LinearTokens, getUserById, updateUserLinearTokens } from './db'
 
 const TOKEN_ENDPOINT = 'https://api.linear.app/oauth/token'
 
@@ -38,4 +40,24 @@ export async function getLinearAccessToken(
   const tokens = toLinearTokens(await client.refreshAccessToken(TOKEN_ENDPOINT, user.linear_refresh_token, []))
   await updateUserLinearTokens(db, userId, tokens)
   return tokens.accessToken
+}
+
+/**
+ * Opens a workspace team's data in Linear, using the token of whoever added the team
+ * so all workspace members can see it. The stage map defaults to the team's
+ * non-canceled workflow states, in workflow order.
+ */
+export async function openTeam(
+  db: D1Database,
+  env: App.Platform['env'],
+  team: DbTeam
+): Promise<{ client: LinearClient; states: LinearWorkflowState[]; defaultStageMap: Map<string, string> }> {
+  const token = await getLinearAccessToken(db, env, team.added_by_user_id)
+  if (!token) {
+    error(409, 'The person who added this team has disconnected Linear')
+  }
+
+  const client = new LinearClient(team.linear_team_key, token)
+  const states = await client.fetchWorkflowStates()
+  return { client, states, defaultStageMap: makeDefaultStageMap(states) }
 }
