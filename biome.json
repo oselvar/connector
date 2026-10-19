@@ -26,21 +26,12 @@
     }
   },
   "files": {
-    "include": [
-      "packages/**",
-      "*.ts"
-    ],
-    "ignore": [
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/.svelte-kit/**"
-    ]
+    "include": ["packages/**", "*.ts"],
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/.svelte-kit/**"]
   },
   "overrides": [
     {
-      "include": [
-        "**/*.svelte"
-      ],
+      "include": ["**/*.svelte"],
       "linter": {
         "rules": {
           "style": {

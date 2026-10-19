@@ -1,15 +1,28 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "oselvar-webapp",
+  "account_id": "f0c7420e826a094131e98342069c929d",
+  "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
+    "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
   },
+  "routes": [
+    {
+      "pattern": "metrics.oselvar.com",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "oselvar-db",
-      "database_id": "TO_BE_CREATED"
+      "database_id": "a5642a2a-73e1-4b75-a882-d012df1aa6f0"
     }
-  ]
+  ],
+  "observability": {
+    "enabled": true
+  }
 }

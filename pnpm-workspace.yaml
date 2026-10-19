@@ -1,2 +1,9 @@
 packages:
   - "packages/*"
+
+# Install scripts pnpm may run: the tools that download their binaries
+allowBuilds:
+  '@biomejs/biome': true
+  esbuild: true
+  workerd: true
+  sharp: false
