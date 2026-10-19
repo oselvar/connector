@@ -2,12 +2,12 @@ import { getWorkspaceTeam } from '$lib/server/db'
 import { openTeam } from '$lib/server/linear'
 import { requireWorkspaceMember } from '$lib/server/workspace'
 import { orderedMapValues } from '@oselvar/core'
-import type { WorkItem } from '@oselvar/core'
-import { createLinearWorkItemStream } from '@oselvar/linear'
+import { type LinearWorkItem, createLinearIssueStream } from '@oselvar/linear'
 import { error } from '@sveltejs/kit'
-import type { PageServerLoad } from './$types'
+import type { LayoutServerLoad } from './$types'
 
-export const load: PageServerLoad = async ({ params, platform, locals }) => {
+// Shared by the team's chart tabs, so switching tabs doesn't fetch from Linear again
+export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
   const { db, env, workspace } = await requireWorkspaceMember(platform, locals, params.id)
 
   const team = await getWorkspaceTeam(db, workspace.id, params.teamId)
@@ -34,12 +34,12 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
     defaultFrom,
     defaultTo,
     // Streamed, so the page renders while issues load from Linear
-    workItems: collect(createLinearWorkItemStream(client, states, defaultStageMap)),
+    issues: collect(createLinearIssueStream(client, states, defaultStageMap)),
   }
 }
 
-async function collect(stream: ReadableStream<WorkItem<string>>): Promise<WorkItem<string>[]> {
-  const items: WorkItem<string>[] = []
+async function collect(stream: ReadableStream<LinearWorkItem>): Promise<LinearWorkItem[]> {
+  const items: LinearWorkItem[] = []
   const reader = stream.getReader()
   for (let next = await reader.read(); !next.done; next = await reader.read()) {
     items.push(next.value)

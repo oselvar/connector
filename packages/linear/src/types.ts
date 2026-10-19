@@ -44,6 +44,7 @@ export type LinearIssue = {
   identifier: string
   url: string
   createdAt: string
+  state: { id: string; name: string; type: WorkflowStateType }
   stateHistory: LinearStateSpanConnection
 }
 

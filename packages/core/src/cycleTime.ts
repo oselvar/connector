@@ -6,13 +6,13 @@ export type CycleTimeItem = {
   cycleTimeDays: number
 }
 
-type StagedItem = {
+export type StagedItem = {
   id: string
   name?: string
   [stage: string]: unknown
 }
 
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
+export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 
 /**
  * Calculates the cycle time between two stages for each item.
@@ -58,7 +58,7 @@ export function calculateCycleTimes(
 /**
  * When the item first reached the stage at stageIndex or any later stage.
  */
-function crossedAt(item: StagedItem, stages: readonly string[], stageIndex: number): Date | undefined {
+export function crossedAt(item: StagedItem, stages: readonly string[], stageIndex: number): Date | undefined {
   if (stageIndex === -1) return undefined
   let earliest: Date | undefined
   for (const stage of stages.slice(stageIndex)) {

@@ -29,6 +29,7 @@ const ISSUES_QUERY = `
         identifier
         url
         createdAt
+        state { id name type }
         stateHistory(first: 50) { ${STATE_SPAN_FIELDS} }
       }
       pageInfo { hasNextPage endCursor }

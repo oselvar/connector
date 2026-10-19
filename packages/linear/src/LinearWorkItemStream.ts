@@ -5,7 +5,16 @@ import { makeHistoricWorkItem } from './makeHistoricWorkItem'
 import type { LinearIssue, LinearStateSpan, LinearWorkflowState } from './types'
 
 /**
+ * A work item together with the workflow state its issue is in now.
+ */
+export type LinearWorkItem = {
+  workItem: WorkItem<string>
+  currentState: string
+}
+
+/**
  * Creates a ReadableStream that outputs WorkItem objects from a Linear team.
+ * Canceled issues are left out.
  */
 export function createLinearWorkItemStream(
   linearClient: LinearClient,
@@ -14,12 +23,32 @@ export function createLinearWorkItemStream(
   maxPages?: number,
   pageSize = 50
 ): ReadableStream<WorkItem<string>> {
+  return createLinearIssueStream(linearClient, states, stageMap, maxPages, pageSize).pipeThrough(
+    new TransformStream<LinearWorkItem, WorkItem<string>>({
+      transform({ workItem }, controller) {
+        controller.enqueue(workItem)
+      },
+    })
+  )
+}
+
+/**
+ * Creates a ReadableStream that outputs work items with their issue's current state.
+ * Canceled issues are left out, since they will never finish.
+ */
+export function createLinearIssueStream(
+  linearClient: LinearClient,
+  states: readonly LinearWorkflowState[],
+  stageMap: Map<string, string>,
+  maxPages?: number,
+  pageSize = 50
+): ReadableStream<LinearWorkItem> {
   let after: string | null = null
   let pageCount = 0
   let done = false
-  const itemQueue: WorkItem<string>[] = []
+  const itemQueue: LinearWorkItem[] = []
 
-  return new ReadableStream<WorkItem<string>>({
+  return new ReadableStream<LinearWorkItem>({
     async pull(controller) {
       // Keep fetching pages until there is something to enqueue or we're done
       while (itemQueue.length === 0 && !done) {
@@ -27,10 +56,11 @@ export function createLinearWorkItemStream(
         pageCount++
 
         for (const issue of page.nodes) {
+          if (issue.state.type === 'canceled') continue
           const stateSpans = await fetchAllStateSpans(linearClient, issue)
           const workItem = toWorkItem(makeHistoricWorkItem(issue, stateSpans, states), stageMap)
           if (workItem) {
-            itemQueue.push(workItem)
+            itemQueue.push({ workItem, currentState: stageMap.get(issue.state.name) ?? issue.state.name })
           }
         }
 
@@ -41,7 +71,7 @@ export function createLinearWorkItemStream(
       }
 
       if (itemQueue.length > 0) {
-        controller.enqueue(itemQueue.shift() as WorkItem<string>)
+        controller.enqueue(itemQueue.shift() as LinearWorkItem)
       } else {
         controller.close()
       }

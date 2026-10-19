@@ -1,6 +1,6 @@
 import { makeMapFromString } from '@oselvar/core'
 import { describe, expect, it } from 'vitest'
-import { LinearClient, createLinearWorkItemStream } from '../src/index.js'
+import { LinearClient, createLinearIssueStream, createLinearWorkItemStream } from '../src/index.js'
 import type { LinearIssue, LinearWorkflowState } from '../src/index.js'
 
 const states: LinearWorkflowState[] = [
@@ -15,6 +15,7 @@ function issue(n: number, spans: LinearIssue['stateHistory']): LinearIssue {
     identifier: `ENG-${n}`,
     url: `https://linear.app/oselvar/issue/ENG-${n}`,
     createdAt: '2026-01-01T00:00:00.000Z',
+    state: { id: 's-done', name: 'Done', type: 'completed' },
     stateHistory: spans,
   }
 }
@@ -113,6 +114,39 @@ describe('LinearWorkItemStream', () => {
     const items = await collect(createLinearWorkItemStream(client, states, makeMapFromString('Todo'), 1))
 
     expect(items.map((item) => item.id)).toEqual(['issue-1', 'issue-2'])
+  })
+
+  it('leaves out canceled issues and reports the current state', async () => {
+    const canceled = {
+      ...issue(4, {
+        nodes: [{ stateId: 's-todo', startedAt: '2026-01-01T00:00:00.000Z', endedAt: null }],
+        pageInfo: lastPage,
+      }),
+      state: { id: 's-canceled', name: 'Canceled', type: 'canceled' as const },
+    }
+    const open = {
+      ...issue(5, {
+        nodes: [{ stateId: 's-progress', startedAt: '2026-01-02T00:00:00.000Z', endedAt: null }],
+        pageInfo: lastPage,
+      }),
+      state: { id: 's-progress', name: 'In Progress', type: 'started' as const },
+    }
+    const fakeFetch: typeof fetch = async () =>
+      new Response(JSON.stringify({ data: { issues: { nodes: [canceled, open], pageInfo: lastPage } } }))
+    const client = new LinearClient('ENG', 'lin_api_test', fakeFetch)
+
+    const items = await collect(createLinearIssueStream(client, states, makeMapFromString('Todo,In Progress,Done')))
+
+    expect(items).toEqual([
+      {
+        workItem: {
+          id: 'issue-5',
+          name: 'https://linear.app/oselvar/issue/ENG-5',
+          'In Progress': new Date('2026-01-02T00:00:00.000Z'),
+        },
+        currentState: 'In Progress',
+      },
+    ])
   })
 
   it('throws on GraphQL errors', async () => {

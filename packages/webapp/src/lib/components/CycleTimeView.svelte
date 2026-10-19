@@ -1,29 +1,18 @@
 <script lang="ts">
 import CycleTimeScatter, { type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
+import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
 import { formatDate, formatDuration, formatMonth, issueIdentifier } from '$lib/format'
+import { getStageRange } from '$lib/stageRange.svelte'
 import { type WorkItem, calculateCycleTimes, percentile } from '@oselvar/core'
 
-const {
-  items,
-  stages,
-  defaultFrom,
-  defaultTo,
-}: {
-  items: readonly WorkItem<string>[]
-  stages: readonly string[]
-  defaultFrom: number
-  defaultTo: number
-} = $props()
+const { items, stages }: { items: readonly WorkItem<string>[]; stages: readonly string[] } = $props()
 
-// svelte-ignore state_referenced_locally
-let from = $state(defaultFrom)
-// svelte-ignore state_referenced_locally
-let to = $state(defaultTo)
+const range = getStageRange()
 let log = $state(false)
 
-const fromName = $derived(stages[from])
-const toName = $derived(stages[to])
+const fromName = $derived(stages[range.from])
+const toName = $derived(stages[range.to])
 
 const points: ScatterPoint[] = $derived(
   calculateCycleTimes(items, stages, fromName, toName)
@@ -50,7 +39,7 @@ const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cyc
 </script>
 
 {#if points.length > 0}
-  <p class="mt-5 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
+  <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
     85% of issues went from {fromName} to {toName} within {formatDuration(p85)}.
   </p>
   <p class="mt-3.5 max-w-[60ch] text-base leading-normal text-gray-600">
@@ -60,31 +49,18 @@ const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cyc
     longer than {formatDuration(p95)}.
   </p>
 {:else}
-  <p class="mt-5 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
+  <p class="mt-6 max-w-[22em] text-4xl font-semibold leading-tight tracking-tight text-gray-900">
     No issues have gone from {fromName} to {toName} yet.
   </p>
   <p class="mt-3.5 text-base text-gray-600">Move the handles further apart, or wait for more issues to finish.</p>
 {/if}
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
-  <StageRange {stages} bind:from bind:to />
+  <StageRange {stages} bind:from={range.from} bind:to={range.to} />
 
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
     <p class="text-sm text-gray-600">Days from {fromName} to {toName}, by the date each issue reached {toName}</p>
-    <div class="flex overflow-hidden rounded-lg border border-gray-300 text-[13px]" role="group" aria-label="Scale">
-      {#each [false, true] as isLog}
-        <button
-          type="button"
-          class="cursor-pointer px-3.5 py-1.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-600 {isLog
-            ? 'border-l border-gray-300'
-            : ''} {log === isLog ? 'bg-indigo-50 font-semibold text-indigo-800' : 'bg-white text-gray-600'}"
-          aria-pressed={log === isLog}
-          onclick={() => (log = isLog)}
-        >
-          {isLog ? 'Log' : 'Linear'}
-        </button>
-      {/each}
-    </div>
+    <ScaleToggle bind:log />
   </div>
 
   {#if points.length > 0}
