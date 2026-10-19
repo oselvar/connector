@@ -16,6 +16,7 @@ const base = $derived(`/app/workspaces/${data.workspace.id}/teams/${data.team.id
 const tabs = $derived([
   { href: base, label: 'Cycle time' },
   { href: `${base}/aging`, label: 'Aging work' },
+  { href: `${base}/flow`, label: 'Cumulative flow' },
 ])
 
 // Keep the selected range in the URL, so it survives reloads and can be shared

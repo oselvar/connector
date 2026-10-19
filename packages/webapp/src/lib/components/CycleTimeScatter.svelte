@@ -1,5 +1,7 @@
 <script lang="ts">
+import { rollingColor } from '$lib/colors'
 import { formatDate, formatDuration, formatShortDuration } from '$lib/format'
+import { MILLISECONDS_PER_DAY } from '@oselvar/core'
 import { scaleLinear, scaleLog, scaleTime } from 'd3-scale'
 
 export type ScatterPoint = {
@@ -18,12 +20,15 @@ export type PercentileLine = {
 const {
   points,
   percentiles,
+  rolling,
   log,
   fromName,
   toName,
 }: {
   points: readonly ScatterPoint[]
   percentiles: readonly PercentileLine[]
+  /** A rolling percentile, one point per day; missing days break the line */
+  rolling: readonly { date: Date; value: number }[]
   log: boolean
   fromName: string
   toName: string
@@ -62,6 +67,20 @@ const xTickFormat = $derived(x.tickFormat())
 const yTicks = $derived(log ? y.ticks().filter((t) => Number.isInteger(Math.log10(t))) : y.ticks(5))
 
 const dots = $derived(points.map((p) => ({ cx: x(p.completionDate), cy: y(p.cycleTimeDays) })))
+
+// Lift the pen over days the rolling percentile leaves out
+const rollingPath = $derived.by(() => {
+  const lastDate = points[points.length - 1].completionDate.getTime()
+  let path = ''
+  let previous: number | null = null
+  for (const { date, value } of rolling) {
+    if (date.getTime() > lastDate) break
+    const day = Math.round(date.getTime() / MILLISECONDS_PER_DAY)
+    path += `${previous === day - 1 ? 'L' : 'M'}${x(date)},${y(value)}`
+    previous = day
+  }
+  return path
+})
 
 let hovered = $state<number | null>(null)
 const hoveredPoint = $derived(hovered === null ? null : points[hovered])
@@ -133,6 +152,8 @@ function onClick() {
         {line.percentile}%: {formatShortDuration(line.days)}
       </text>
     {/each}
+
+    <path d={rollingPath} fill="none" stroke={rollingColor} stroke-width="2" stroke-linejoin="round" />
 
     {#each dots as dot, i}
       <circle cx={dot.cx} cy={dot.cy} r={i === hovered ? 6.5 : 4} class="fill-indigo-600 stroke-white" stroke-width="2" />

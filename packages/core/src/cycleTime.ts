@@ -94,3 +94,34 @@ export function percentile(values: readonly number[], p: number): number | undef
   const rank = Math.ceil((p / 100) * sorted.length)
   return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1]
 }
+
+/**
+ * The p-th percentile of the values in a rolling window, one point per day from the first day
+ * a full window is available. Days with fewer than minCount values in their window are left out.
+ */
+export function rollingPercentile(
+  values: readonly { date: Date; value: number }[],
+  p: number,
+  windowDays: number,
+  minCount: number
+): { date: Date; value: number }[] {
+  if (values.length === 0) return []
+  const times = values.map((v) => v.date.getTime())
+  const first = Math.floor(Math.min(...times) / MILLISECONDS_PER_DAY) * MILLISECONDS_PER_DAY
+  const last = Math.max(...times)
+  const window = windowDays * MILLISECONDS_PER_DAY
+
+  const result: { date: Date; value: number }[] = []
+  for (let end = first + window; end <= last + MILLISECONDS_PER_DAY; end += MILLISECONDS_PER_DAY) {
+    const inWindow = values.filter((v) => v.date.getTime() < end && v.date.getTime() >= end - window)
+    if (inWindow.length < minCount) continue
+    result.push({
+      date: new Date(end),
+      value: percentile(
+        inWindow.map((v) => v.value),
+        p
+      ) as number,
+    })
+  }
+  return result
+}

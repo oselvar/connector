@@ -37,7 +37,7 @@ describe('toWorkItem', () => {
     })
   })
 
-  it('uses the first timestamp when a work item has been multiple times in the same stage', () => {
+  it('erases a later stage when the work item moves back, keeping the first entry of the earlier stage', () => {
     const historicWorkItem: HistoricWorkItem<string> = {
       id: 'id',
       name: 'name',
@@ -53,11 +53,53 @@ describe('toWorkItem', () => {
       id: 'id',
       name: 'name',
       Next: new Date('2001'),
-      Development: new Date('2002'),
     })
   })
 
-  it('overwrites backwards move except for arrival stage', () => {
+  it('uses the timestamp of the move forward that stuck', () => {
+    const historicWorkItem: HistoricWorkItem<string> = {
+      id: 'id',
+      name: 'name',
+      snapshots: [
+        { timestamp: new Date('2001-01-01'), stage: 'Todo' },
+        { timestamp: new Date('2001-01-02'), stage: 'In Progress' },
+        { timestamp: new Date('2001-01-03'), stage: 'Todo' },
+        { timestamp: new Date('2001-01-04'), stage: 'In Progress' },
+        { timestamp: new Date('2001-01-05'), stage: 'Done' },
+      ],
+    }
+
+    const workItem = toWorkItem(historicWorkItem, makeMapFromString('Todo,In Progress,Done'))
+    assert.deepStrictEqual(workItem, {
+      id: 'id',
+      name: 'name',
+      Todo: new Date('2001-01-01'),
+      'In Progress': new Date('2001-01-04'),
+      Done: new Date('2001-01-05'),
+    })
+  })
+
+  it('leaves skipped stages empty, and fills them if a back move lands there', () => {
+    const historicWorkItem: HistoricWorkItem<string> = {
+      id: 'id',
+      name: 'name',
+      snapshots: [
+        { timestamp: new Date('2001-01-01'), stage: 'Backlog' },
+        { timestamp: new Date('2001-01-02'), stage: 'In Progress' },
+        { timestamp: new Date('2001-01-03'), stage: 'Todo' },
+      ],
+    }
+
+    const workItem = toWorkItem(historicWorkItem, makeMapFromString('Backlog,Todo,In Progress'))
+    assert.deepStrictEqual(workItem, {
+      id: 'id',
+      name: 'name',
+      Backlog: new Date('2001-01-01'),
+      Todo: new Date('2001-01-03'),
+    })
+  })
+
+  it('erases every stage after the one it moves back to', () => {
     const stages = <const>['a', 'b', 'c', 'd']
     type Stage = (typeof stages)[number]
 
@@ -80,8 +122,6 @@ describe('toWorkItem', () => {
       id: 'id',
       name: 'name',
       a: new Date('2001'),
-      b: new Date('2002'),
-      c: new Date('2003'),
     }
     assert.deepStrictEqual(workItem, expected)
   })

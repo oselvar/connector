@@ -124,7 +124,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
       <span>Compared with finished issues at the same stage:</span>
       {#each zones as zone}
         <span class="inline-flex items-center gap-1.5">
-          <span class="size-3 rounded-[3px] border {zone.swatch}"></span>{zone.label}
+          <span class="size-3 rounded-[3px] border" style:background={zone.swatch} style:border-color={zone.edge}></span>{zone.label}
         </span>
       {/each}
     </div>
@@ -166,7 +166,11 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
               <td class="px-4 py-2 text-right tabular-nums">{formatDuration(dot.ageDays)}</td>
               <td class="px-4 py-2 text-gray-700">
                 <span class="inline-flex items-center gap-2">
-                  <span class="size-3 rounded-[3px] border {zones[dot.zone].swatch}"></span>{zones[dot.zone].label}
+                  <span
+                    class="size-3 rounded-[3px] border"
+                    style:background={zones[dot.zone].swatch}
+                    style:border-color={zones[dot.zone].edge}
+                  ></span>{zones[dot.zone].label}
                 </span>
               </td>
             </tr>

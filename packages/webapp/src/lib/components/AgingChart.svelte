@@ -123,7 +123,7 @@ const bottom = $derived(height - margin.bottom)
       {#if column.pace}
         {@const bands = [bottom, ...column.pace.map((days) => y(days)), top]}
         {#each zones as zone, z}
-          <rect {x} y={bands[z + 1]} width={columnWidth} height={Math.max(0, bands[z] - bands[z + 1])} class={zone.wash} />
+          <rect {x} y={bands[z + 1]} width={columnWidth} height={Math.max(0, bands[z] - bands[z + 1])} fill={zone.wash} />
         {/each}
       {/if}
       {#if i > 0}

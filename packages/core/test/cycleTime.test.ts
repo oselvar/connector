@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateCycleTimes, percentile } from '../src/index.js'
+import { calculateCycleTimes, percentile, rollingPercentile } from '../src/index.js'
 
 const stages = ['Todo', 'In Progress', 'Done']
 
@@ -77,5 +77,29 @@ describe('percentile', () => {
 
   it('is undefined for no values', () => {
     expect(percentile([], 50)).toBeUndefined()
+  })
+})
+
+describe('rollingPercentile', () => {
+  it('gives the percentile of the values in the window before each day', () => {
+    const values = [
+      { date: new Date('2026-01-01T12:00Z'), value: 1 },
+      { date: new Date('2026-01-02T12:00Z'), value: 3 },
+      { date: new Date('2026-01-03T12:00Z'), value: 5 },
+    ]
+
+    expect(rollingPercentile(values, 100, 2, 1)).toEqual([
+      { date: new Date('2026-01-03T00:00Z'), value: 3 },
+      { date: new Date('2026-01-04T00:00Z'), value: 5 },
+    ])
+  })
+
+  it('leaves out days with too few values in their window', () => {
+    const values = [
+      { date: new Date('2026-01-01T12:00Z'), value: 1 },
+      { date: new Date('2026-01-05T12:00Z'), value: 3 },
+    ]
+
+    expect(rollingPercentile(values, 85, 2, 2)).toEqual([])
   })
 })

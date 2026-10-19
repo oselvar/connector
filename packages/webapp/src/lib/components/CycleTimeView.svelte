@@ -1,10 +1,11 @@
 <script lang="ts">
+import { rollingColor } from '$lib/colors'
 import CycleTimeScatter, { type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
 import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
 import { formatDate, formatDuration, formatMonth, issueIdentifier } from '$lib/format'
 import { getStageRange } from '$lib/stageRange.svelte'
-import { type WorkItem, calculateCycleTimes, percentile } from '@oselvar/core'
+import { type WorkItem, calculateCycleTimes, percentile, rollingPercentile } from '@oselvar/core'
 
 const { items, stages }: { items: readonly WorkItem<string>[]; stages: readonly string[] } = $props()
 
@@ -29,6 +30,16 @@ const days = $derived(points.map((p) => p.cycleTimeDays))
 const p50 = $derived(percentile(days, 50) ?? 0)
 const p85 = $derived(percentile(days, 85) ?? 0)
 const p95 = $derived(percentile(days, 95) ?? 0)
+// The trend: 85th percentile of the issues that finished in the previous 30 days
+const rolling = $derived(
+  rollingPercentile(
+    points.map((p) => ({ date: p.completionDate, value: p.cycleTimeDays })),
+    85,
+    30,
+    5
+  )
+)
+
 const percentiles = $derived([
   { percentile: 50, days: p50, emphasis: false },
   { percentile: 85, days: p85, emphasis: true },
@@ -59,13 +70,22 @@ const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cyc
   <StageRange {stages} bind:from={range.from} bind:to={range.to} />
 
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
-    <p class="text-sm text-gray-600">Days from {fromName} to {toName}, by the date each issue reached {toName}</p>
+    <div>
+      <p class="text-sm text-gray-600">Days from {fromName} to {toName}, by the date each issue reached {toName}</p>
+      <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-gray-600">
+        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-indigo-600"></span>An issue</span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="h-0.5 w-4 rounded-full" style:background={rollingColor}></span>85% of issues finished in the previous 30 days
+          took this long or less
+        </span>
+      </div>
+    </div>
     <ScaleToggle bind:log />
   </div>
 
   {#if points.length > 0}
     <div class="mt-3">
-      <CycleTimeScatter {points} {percentiles} {log} {fromName} {toName} />
+      <CycleTimeScatter {points} {percentiles} {rolling} {log} {fromName} {toName} />
     </div>
   {/if}
 </section>
