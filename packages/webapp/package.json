@@ -10,8 +10,8 @@
     "prepare": "svelte-kit sync || echo ''",
     "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "db:migrate": "wrangler d1 migrations apply oselvar-db --local",
-    "db:migrate:prod": "wrangler d1 migrations apply oselvar-db --remote"
+    "db:migrate": "wrangler d1 migrations apply oselvar-metrics --local",
+    "db:migrate:prod": "wrangler d1 migrations apply oselvar-metrics --remote"
   },
   "dependencies": {
     "@lucia-auth/adapter-sqlite": "^3.0.2",

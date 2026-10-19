@@ -45,7 +45,7 @@ jobs:
       - run: pnpm --filter @oselvar/webapp build
       - name: Apply database migrations
         working-directory: packages/webapp
-        run: pnpm exec wrangler d1 migrations apply oselvar-db --remote
+        run: pnpm exec wrangler d1 migrations apply oselvar-metrics --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: f0c7420e826a094131e98342069c929d
