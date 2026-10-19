@@ -1,17 +1,17 @@
 <script lang="ts">
-import CycleTimeView from '$lib/components/CycleTimeView.svelte'
 import IssuesLoading from '$lib/components/IssuesLoading.svelte'
+import OverviewView from '$lib/components/OverviewView.svelte'
 import type { PageData } from './$types'
 
 const { data }: { data: PageData } = $props()
 </script>
 
 <svelte:head>
-  <title>{data.team.linear_team_name} cycle time</title>
+  <title>{data.team.linear_team_name} overview</title>
 </svelte:head>
 
 <IssuesLoading issues={data.issues}>
   {#snippet children(issues)}
-    <CycleTimeView items={issues.map((issue) => issue.workItem)} stages={data.stages} />
+    <OverviewView items={issues.map((issue) => issue.workItem)} />
   {/snippet}
 </IssuesLoading>

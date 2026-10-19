@@ -16,6 +16,7 @@ function issue(n: number, spans: LinearIssue['stateHistory']): LinearIssue {
     url: `https://linear.app/oselvar/issue/ENG-${n}`,
     createdAt: '2026-01-01T00:00:00.000Z',
     state: { id: 's-done', name: 'Done', type: 'completed' },
+    archivedAt: null,
     stateHistory: spans,
   }
 }
@@ -116,7 +117,7 @@ describe('LinearWorkItemStream', () => {
     expect(items.map((item) => item.id)).toEqual(['issue-1', 'issue-2'])
   })
 
-  it('leaves out canceled issues and reports the current state', async () => {
+  it('leaves out canceled, duplicate and abandoned issues, and reports the current state', async () => {
     const canceled = {
       ...issue(4, {
         nodes: [{ stateId: 's-todo', startedAt: '2026-01-01T00:00:00.000Z', endedAt: null }],
@@ -131,8 +132,25 @@ describe('LinearWorkItemStream', () => {
       }),
       state: { id: 's-progress', name: 'In Progress', type: 'started' as const },
     }
+    const duplicate = {
+      ...canceled,
+      id: 'issue-6',
+      state: { id: 's-dup', name: 'Duplicate', type: 'duplicate' as const },
+    }
+    const abandoned = { ...open, id: 'issue-7', archivedAt: '2026-01-03T00:00:00.000Z' }
+    const archivedDone = {
+      ...issue(8, {
+        nodes: [{ stateId: 's-done', startedAt: '2026-01-02T00:00:00.000Z', endedAt: null }],
+        pageInfo: lastPage,
+      }),
+      archivedAt: '2026-01-05T00:00:00.000Z',
+    }
     const fakeFetch: typeof fetch = async () =>
-      new Response(JSON.stringify({ data: { issues: { nodes: [canceled, open], pageInfo: lastPage } } }))
+      new Response(
+        JSON.stringify({
+          data: { issues: { nodes: [canceled, duplicate, abandoned, open, archivedDone], pageInfo: lastPage } },
+        })
+      )
     const client = new LinearClient('ENG', 'lin_api_test', fakeFetch)
 
     const items = await collect(createLinearIssueStream(client, states, makeMapFromString('Todo,In Progress,Done')))
@@ -145,6 +163,14 @@ describe('LinearWorkItemStream', () => {
           'In Progress': new Date('2026-01-02T00:00:00.000Z'),
         },
         currentState: 'In Progress',
+      },
+      {
+        workItem: {
+          id: 'issue-8',
+          name: 'https://linear.app/oselvar/issue/ENG-8',
+          Done: new Date('2026-01-02T00:00:00.000Z'),
+        },
+        currentState: 'Done',
       },
     ])
   })

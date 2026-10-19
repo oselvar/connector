@@ -14,7 +14,7 @@ export type LinearWorkItem = {
 
 /**
  * Creates a ReadableStream that outputs WorkItem objects from a Linear team.
- * Canceled issues are left out.
+ * Canceled, duplicate and abandoned issues are left out.
  */
 export function createLinearWorkItemStream(
   linearClient: LinearClient,
@@ -34,7 +34,7 @@ export function createLinearWorkItemStream(
 
 /**
  * Creates a ReadableStream that outputs work items with their issue's current state.
- * Canceled issues are left out, since they will never finish.
+ * Canceled, duplicate and abandoned issues are left out, since they will never finish.
  */
 export function createLinearIssueStream(
   linearClient: LinearClient,
@@ -56,7 +56,7 @@ export function createLinearIssueStream(
         pageCount++
 
         for (const issue of page.nodes) {
-          if (issue.state.type === 'canceled') continue
+          if (!isLive(issue)) continue
           const stateSpans = await fetchAllStateSpans(linearClient, issue)
           const workItem = toWorkItem(makeHistoricWorkItem(issue, stateSpans, states), stageMap)
           if (workItem) {
@@ -77,6 +77,15 @@ export function createLinearIssueStream(
       }
     },
   })
+}
+
+/**
+ * Whether an issue is still part of the flow: not canceled or marked as a duplicate, and not
+ * archived before it finished. Finished issues stay, since Linear archives them automatically.
+ */
+function isLive(issue: LinearIssue): boolean {
+  if (issue.state.type === 'canceled' || issue.state.type === 'duplicate') return false
+  return issue.archivedAt === null || issue.state.type === 'completed'
 }
 
 async function fetchAllStateSpans(linearClient: LinearClient, issue: LinearIssue): Promise<LinearStateSpan[]> {

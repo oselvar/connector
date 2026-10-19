@@ -1,5 +1,6 @@
 <script lang="ts">
 import AgingChart, { type AgingColumn, type AgingDot } from '$lib/components/AgingChart.svelte'
+import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
 import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
 import { formatDuration, issueIdentifier } from '$lib/format'
@@ -115,6 +116,8 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` :
     shown.
   </p>
 {/if}
+
+<ChartCoachNote items={workItems} chart="aging" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
   <StageRange {stages} bind:from={range.from} bind:to={range.to} />

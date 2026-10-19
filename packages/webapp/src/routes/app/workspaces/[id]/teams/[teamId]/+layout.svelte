@@ -2,6 +2,7 @@
 import { replaceState } from '$app/navigation'
 import { page } from '$app/state'
 import { readStageRange, setStageRange, stageRangeSearch } from '$lib/stageRange.svelte'
+import { setTeam } from '$lib/team'
 import type { Snippet } from 'svelte'
 import type { LayoutData } from './$types'
 
@@ -10,13 +11,32 @@ const { data, children }: { data: LayoutData; children: Snippet } = $props()
 // svelte-ignore state_referenced_locally
 const range = $state(readStageRange(page.url, data.stages, data.defaultFrom, data.defaultTo))
 setStageRange(range)
+// Getters, so pages see the current data
+setTeam({
+  get workspaceId() {
+    return data.workspace.id
+  },
+  get teamId() {
+    return data.team.id
+  },
+  get stages() {
+    return data.stages
+  },
+  get commitmentStage() {
+    return data.commitmentStage
+  },
+})
 
 const search = $derived(stageRangeSearch(data.stages, range))
 const base = $derived(`/app/workspaces/${data.workspace.id}/teams/${data.team.id}`)
 const tabs = $derived([
-  { href: base, label: 'Cycle time' },
+  { href: base, label: 'Overview' },
+  { href: `${base}/cycle-time`, label: 'Cycle time' },
   { href: `${base}/aging`, label: 'Aging work' },
   { href: `${base}/flow`, label: 'Cumulative flow' },
+  { href: `${base}/throughput`, label: 'Throughput' },
+  { href: `${base}/wip`, label: 'Work in progress' },
+  { href: `${base}/forecast`, label: 'Forecast' },
 ])
 
 // Keep the selected range in the URL, so it survives reloads and can be shared

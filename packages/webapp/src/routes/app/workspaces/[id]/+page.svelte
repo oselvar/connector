@@ -55,7 +55,7 @@ function copyShareLink() {
                 href="/app/workspaces/{data.workspace.id}/teams/{team.id}"
                 class="font-medium text-indigo-600 hover:text-indigo-800"
               >
-                {team.linear_team_name} cycle time
+                {team.linear_team_name}
               </a>
               <p class="text-sm text-gray-500">{team.linear_team_key}</p>
             </div>

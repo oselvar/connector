@@ -26,6 +26,8 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
   )
   const firstCompleted = stages.findIndex((stage) => stateTypes.get(stage) === 'completed')
   const defaultTo = firstCompleted > defaultFrom ? firstCompleted : stages.length - 1
+  // Where work counts as started, for the coach
+  const commitmentStage = stages.find((stage) => stateTypes.get(stage) === 'started')
 
   return {
     workspace,
@@ -33,6 +35,7 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
     stages,
     defaultFrom,
     defaultTo,
+    commitmentStage,
     // Streamed, so the page renders while issues load from Linear
     issues: collect(createLinearIssueStream(client, states, defaultStageMap)),
   }

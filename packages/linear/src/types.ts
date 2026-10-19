@@ -1,4 +1,4 @@
-export type WorkflowStateType = 'triage' | 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'
+export type WorkflowStateType = 'triage' | 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled' | 'duplicate'
 
 export type LinearViewer = {
   id: string
@@ -45,6 +45,7 @@ export type LinearIssue = {
   url: string
   createdAt: string
   state: { id: string; name: string; type: WorkflowStateType }
+  archivedAt: string | null
   stateHistory: LinearStateSpanConnection
 }
 

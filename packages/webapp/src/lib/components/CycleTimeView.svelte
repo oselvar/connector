@@ -1,5 +1,6 @@
 <script lang="ts">
 import { rollingColor } from '$lib/colors'
+import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
 import CycleTimeScatter, { type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
 import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
@@ -65,6 +66,8 @@ const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cyc
   </p>
   <p class="mt-3.5 text-base text-gray-600">Move the handles further apart, or wait for more issues to finish.</p>
 {/if}
+
+<ChartCoachNote items={items} chart="cycle-time" />
 
 <section class="mt-8 rounded-xl bg-white px-4 pb-5 pt-6 shadow-sm sm:px-6">
   <StageRange {stages} bind:from={range.from} bind:to={range.to} />
