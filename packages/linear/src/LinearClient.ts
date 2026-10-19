@@ -1,4 +1,12 @@
-import type { LinearIssuesPage, LinearStateSpanConnection, LinearWorkflowState } from './types'
+import type {
+  LinearIssuesPage,
+  LinearStateSpanConnection,
+  LinearTeam,
+  LinearViewer,
+  LinearWorkflowState,
+} from './types'
+
+const LINEAR_GRAPHQL_URL = 'https://api.linear.app/graphql'
 
 const STATE_SPAN_FIELDS = `
   nodes { stateId startedAt endedAt }
@@ -36,12 +44,59 @@ const STATE_HISTORY_QUERY = `
   }
 `
 
+const VIEWER_QUERY = `
+  query Viewer {
+    viewer { id name email organization { id name } }
+  }
+`
+
+const TEAMS_QUERY = `
+  query Teams {
+    teams(first: 250) { nodes { id key name } }
+  }
+`
+
+/**
+ * Sends a GraphQL request to Linear. Personal API keys (lin_api_...) are sent as-is,
+ * OAuth access tokens as Bearer tokens.
+ */
+export async function linearGraphQL<T>(
+  token: string,
+  query: string,
+  variables: Record<string, unknown> = {},
+  fetchFn: typeof fetch = fetch
+): Promise<T> {
+  const res = await fetchFn(LINEAR_GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token.startsWith('lin_api_') ? token : `Bearer ${token}`,
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+  const body = (await res.json().catch(() => null)) as { data?: T; errors?: { message: string }[] } | null
+  if (!res.ok || body?.errors || !body?.data) {
+    const messages = body?.errors?.map((e) => e.message).join('; ') ?? ''
+    throw new Error(`Error from Linear API - status ${res.status} ${messages}`.trim())
+  }
+  return body.data
+}
+
+export async function fetchViewer(token: string, fetchFn: typeof fetch = fetch): Promise<LinearViewer> {
+  const data = await linearGraphQL<{ viewer: LinearViewer }>(token, VIEWER_QUERY, {}, fetchFn)
+  return data.viewer
+}
+
+export async function fetchTeams(token: string, fetchFn: typeof fetch = fetch): Promise<LinearTeam[]> {
+  const data = await linearGraphQL<{ teams: { nodes: LinearTeam[] } }>(token, TEAMS_QUERY, {}, fetchFn)
+  return data.teams.nodes
+}
+
 export class LinearClient {
   constructor(
     private readonly teamKey: string,
     private readonly token: string,
-    private readonly fetchFn: typeof fetch = fetch,
-    private readonly url = 'https://api.linear.app/graphql'
+    private readonly fetchFn: typeof fetch = fetch
   ) {}
 
   async fetchWorkflowStates(): Promise<LinearWorkflowState[]> {
@@ -71,21 +126,7 @@ export class LinearClient {
     return data.issue.stateHistory
   }
 
-  private async query<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-    const res = await this.fetchFn(this.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Personal API keys are sent as-is, OAuth access tokens as Bearer tokens
-        Authorization: this.token.startsWith('lin_api_') ? this.token : `Bearer ${this.token}`,
-      },
-      body: JSON.stringify({ query, variables }),
-    })
-    const body = (await res.json().catch(() => null)) as { data?: T; errors?: { message: string }[] } | null
-    if (!res.ok || body?.errors || !body?.data) {
-      const messages = body?.errors?.map((e) => e.message).join('; ') ?? ''
-      throw new Error(`Error from Linear API - status ${res.status} ${messages}`.trim())
-    }
-    return body.data
+  private query<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+    return linearGraphQL<T>(this.token, query, variables, this.fetchFn)
   }
 }

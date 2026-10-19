@@ -21,6 +21,16 @@ export type DbUser = {
   created_at: string
   github_id: string | null
   github_access_token: string | null
+  linear_id: string | null
+  linear_access_token: string | null
+  linear_refresh_token: string | null
+  linear_token_expires_at: number | null
+}
+
+export type LinearTokens = {
+  accessToken: string
+  refreshToken: string
+  expiresAt: Date
 }
 
 export type DbWorkspace = {
@@ -28,6 +38,15 @@ export type DbWorkspace = {
   name: string
   share_token: string
   created_at: string
+}
+
+export type DbTeam = {
+  id: string
+  workspace_id: string
+  added_by_user_id: string
+  linear_team_id: string
+  linear_team_key: string
+  linear_team_name: string
 }
 
 export type DbWorkspaceMember = {
@@ -47,8 +66,19 @@ export async function getUserByGithubId(db: D1Database, githubId: string): Promi
 
 export async function createUser(db: D1Database, user: Partial<DbUser> & { id: string }): Promise<void> {
   await db
-    .prepare('INSERT INTO users (id, github_id, github_access_token) VALUES (?, ?, ?)')
-    .bind(user.id, user.github_id ?? null, user.github_access_token ?? null)
+    .prepare(
+      `INSERT INTO users (id, github_id, github_access_token, linear_id, linear_access_token, linear_refresh_token, linear_token_expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      user.id,
+      user.github_id ?? null,
+      user.github_access_token ?? null,
+      user.linear_id ?? null,
+      user.linear_access_token ?? null,
+      user.linear_refresh_token ?? null,
+      user.linear_token_expires_at ?? null
+    )
     .run()
 }
 
@@ -61,6 +91,33 @@ export async function updateUserGithub(
   await db
     .prepare('UPDATE users SET github_id = ?, github_access_token = ? WHERE id = ?')
     .bind(githubId, accessToken, userId)
+    .run()
+}
+
+export async function getUserByLinearId(db: D1Database, linearId: string): Promise<DbUser | null> {
+  return db.prepare('SELECT * FROM users WHERE linear_id = ?').bind(linearId).first<DbUser>()
+}
+
+export async function updateUserLinear(
+  db: D1Database,
+  userId: string,
+  linearId: string,
+  tokens: LinearTokens
+): Promise<void> {
+  await db
+    .prepare(
+      'UPDATE users SET linear_id = ?, linear_access_token = ?, linear_refresh_token = ?, linear_token_expires_at = ? WHERE id = ?'
+    )
+    .bind(linearId, tokens.accessToken, tokens.refreshToken, tokens.expiresAt.getTime(), userId)
+    .run()
+}
+
+export async function updateUserLinearTokens(db: D1Database, userId: string, tokens: LinearTokens): Promise<void> {
+  await db
+    .prepare(
+      'UPDATE users SET linear_access_token = ?, linear_refresh_token = ?, linear_token_expires_at = ? WHERE id = ?'
+    )
+    .bind(tokens.accessToken, tokens.refreshToken, tokens.expiresAt.getTime(), userId)
     .run()
 }
 
@@ -115,4 +172,38 @@ export async function isWorkspaceMember(db: D1Database, workspaceId: string, use
     .bind(workspaceId, userId)
     .first()
   return result !== null
+}
+
+// Team operations
+export async function getWorkspaceTeams(db: D1Database, workspaceId: string): Promise<DbTeam[]> {
+  const result = await db
+    .prepare('SELECT * FROM teams WHERE workspace_id = ? ORDER BY linear_team_name')
+    .bind(workspaceId)
+    .all<DbTeam>()
+  return result.results
+}
+
+export async function getWorkspaceTeam(db: D1Database, workspaceId: string, teamId: string): Promise<DbTeam | null> {
+  return db.prepare('SELECT * FROM teams WHERE workspace_id = ? AND id = ?').bind(workspaceId, teamId).first<DbTeam>()
+}
+
+export async function createTeam(db: D1Database, team: DbTeam): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO teams (id, workspace_id, added_by_user_id, linear_team_id, linear_team_key, linear_team_name)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      team.id,
+      team.workspace_id,
+      team.added_by_user_id,
+      team.linear_team_id,
+      team.linear_team_key,
+      team.linear_team_name
+    )
+    .run()
+}
+
+export async function deleteTeam(db: D1Database, workspaceId: string, teamId: string): Promise<void> {
+  await db.prepare('DELETE FROM teams WHERE workspace_id = ? AND id = ?').bind(workspaceId, teamId).run()
 }

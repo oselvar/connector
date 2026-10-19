@@ -23,7 +23,7 @@ const { data, children }: { data: LayoutData; children: import('svelte').Snippet
         </div>
         <div class="flex items-center">
           <span class="mr-4 text-sm text-gray-500">
-            {data.user.githubId ? 'GitHub' : ''}
+            {[data.user.githubId && 'GitHub', data.user.linearId && 'Linear'].filter(Boolean).join(' + ')}
           </span>
           <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700"> Sign out </a>
         </div>

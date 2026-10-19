@@ -20,6 +20,16 @@ const { data }: { data: PageData } = $props()
         </svg>
         Continue with GitHub
       </a>
+
+      <a
+        href="/login/linear"
+        class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-6 py-3 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      >
+        <svg class="h-5 w-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="12" />
+        </svg>
+        Continue with Linear
+      </a>
     </div>
 
     <p class="mt-8 text-center text-sm text-gray-500">

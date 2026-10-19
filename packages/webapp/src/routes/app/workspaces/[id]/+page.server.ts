@@ -1,27 +1,26 @@
-import { getWorkspaceById, isWorkspaceMember } from '$lib/server/db'
-import { error } from '@sveltejs/kit'
-import type { PageServerLoad } from './$types'
+import { deleteTeam, getWorkspaceTeams } from '$lib/server/db'
+import { requireWorkspaceMember } from '$lib/server/workspace'
+import type { Actions, PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ params, platform, locals, url }) => {
-  const db = platform?.env?.DB
-  if (!db || !locals.user) {
-    error(401, 'Not authenticated')
-  }
+  const { db, workspace } = await requireWorkspaceMember(platform, locals, params.id)
 
-  const workspace = await getWorkspaceById(db, params.id)
-  if (!workspace) {
-    error(404, 'Workspace not found')
-  }
-
-  const isMember = await isWorkspaceMember(db, workspace.id, locals.user.id)
-  if (!isMember) {
-    error(403, 'Not a member of this workspace')
-  }
-
+  const teams = await getWorkspaceTeams(db, workspace.id)
   const shareUrl = `${url.origin}/join/${workspace.share_token}`
 
   return {
     workspace,
+    teams,
     shareUrl,
   }
+}
+
+export const actions: Actions = {
+  removeTeam: async ({ params, platform, locals, request }) => {
+    const { db, workspace } = await requireWorkspaceMember(platform, locals, params.id)
+    const teamId = (await request.formData()).get('team_id')?.toString()
+    if (teamId) {
+      await deleteTeam(db, workspace.id, teamId)
+    }
+  },
 }

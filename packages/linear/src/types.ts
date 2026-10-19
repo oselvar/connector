@@ -1,5 +1,18 @@
 export type WorkflowStateType = 'triage' | 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'
 
+export type LinearViewer = {
+  id: string
+  name: string
+  email: string
+  organization: { id: string; name: string }
+}
+
+export type LinearTeam = {
+  id: string
+  key: string
+  name: string
+}
+
 export type LinearWorkflowState = {
   id: string
   name: string

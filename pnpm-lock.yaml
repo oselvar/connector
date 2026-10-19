@@ -133,6 +133,9 @@ importers:
       '@oselvar/core':
         specifier: workspace:*
         version: link:../core
+      '@oselvar/linear':
+        specifier: workspace:*
+        version: link:../linear
       arctic:
         specifier: ^3.7.0
         version: 3.7.0

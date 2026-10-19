@@ -17,6 +17,16 @@ const { data }: { data: PageData } = $props()
       <p class="mt-2 text-sm text-gray-500">Manage your workspaces</p>
     </a>
 
+    {#if !data.user?.linearId}
+      <a
+        href="/login/linear"
+        class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md"
+      >
+        <h3 class="text-lg font-medium text-gray-900">Connect Linear</h3>
+        <p class="mt-2 text-sm text-gray-500">Link your Linear account to track issues</p>
+      </a>
+    {/if}
+
     {#if !data.user?.githubId}
       <a
         href="/login/github"

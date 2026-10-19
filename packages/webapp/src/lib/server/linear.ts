@@ -1,0 +1,41 @@
+/// <reference types="@cloudflare/workers-types" />
+
+import { OAuth2Client, type OAuth2Tokens } from 'arctic'
+import { type LinearTokens, getUserById, updateUserLinearTokens } from './db'
+
+const TOKEN_ENDPOINT = 'https://api.linear.app/oauth/token'
+
+// Refresh a little before expiry so a long export doesn't run with a token that's about to expire
+const REFRESH_MARGIN_MS = 10 * 60 * 1000
+
+export function toLinearTokens(tokens: OAuth2Tokens): LinearTokens {
+  return {
+    accessToken: tokens.accessToken(),
+    // OAuth apps created before Linear introduced refresh tokens get long-lived tokens without one
+    refreshToken: tokens.hasRefreshToken() ? tokens.refreshToken() : '',
+    expiresAt: tokens.accessTokenExpiresAt(),
+  }
+}
+
+/**
+ * Returns a valid Linear access token for the user, refreshing it if it's about to expire.
+ * Returns null if the user hasn't connected Linear.
+ */
+export async function getLinearAccessToken(
+  db: D1Database,
+  env: App.Platform['env'],
+  userId: string
+): Promise<string | null> {
+  const user = await getUserById(db, userId)
+  if (!user?.linear_access_token) return null
+
+  const expiresAt = user.linear_token_expires_at ?? 0
+  if (expiresAt - REFRESH_MARGIN_MS > Date.now() || !user.linear_refresh_token) {
+    return user.linear_access_token
+  }
+
+  const client = new OAuth2Client(env.LINEAR_CLIENT_ID, env.LINEAR_CLIENT_SECRET, null)
+  const tokens = toLinearTokens(await client.refreshAccessToken(TOKEN_ENDPOINT, user.linear_refresh_token, []))
+  await updateUserLinearTokens(db, userId, tokens)
+  return tokens.accessToken
+}

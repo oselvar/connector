@@ -1,11 +1,12 @@
 import { D1Adapter } from '@lucia-auth/adapter-sqlite'
-import { GitHub } from 'arctic'
+import { GitHub, Linear } from 'arctic'
 /// <reference types="@cloudflare/workers-types" />
 import { Lucia } from 'lucia'
 
 export type User = {
   id: string
   githubId: string | null
+  linearId: string | null
 }
 
 export type Session = {
@@ -29,6 +30,7 @@ export function initializeLucia(D1: D1Database) {
     getUserAttributes: (attributes) => {
       return {
         githubId: attributes.github_id,
+        linearId: attributes.linear_id,
       }
     },
   })
@@ -38,12 +40,17 @@ export function createGitHubClient(clientId: string, clientSecret: string) {
   return new GitHub(clientId, clientSecret, null)
 }
 
+export function createLinearClient(clientId: string, clientSecret: string, redirectUri: string) {
+  return new Linear(clientId, clientSecret, redirectUri)
+}
+
 // Lucia type augmentation
 declare module 'lucia' {
   interface Register {
     Lucia: ReturnType<typeof initializeLucia>
     DatabaseUserAttributes: {
       github_id: string | null
+      linear_id: string | null
     }
   }
 }

@@ -42,6 +42,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     ? {
         id: user.id,
         githubId: user.githubId,
+        linearId: user.linearId,
       }
     : null
   event.locals.session = session
