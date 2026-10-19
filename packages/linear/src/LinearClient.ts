@@ -49,8 +49,8 @@ const STATE_HISTORY_QUERY = `
 
 const TEAM_MEMBERS_QUERY = `
   query TeamMembers($teamKey: String!) {
-    teams(filter: { key: { eq: $teamKey } }) {
-      nodes { members(first: 250) { nodes { active } } }
+    teams(first: 1, filter: { key: { eq: $teamKey } }) {
+      nodes { members(first: 100) { nodes { active } } }
     }
   }
 `

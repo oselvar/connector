@@ -16,7 +16,11 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
   }
 
   const { client, states, defaultStageMap } = await openTeam(db, env, team)
-  const teamSize = await client.fetchMemberCount()
+  // Only the coach's per-person advice needs this, so carry on without it if Linear says no
+  const teamSize = await client.fetchMemberCount().catch((e) => {
+    console.error('Could not fetch team size from Linear:', e)
+    return undefined
+  })
   const stages = orderedMapValues(defaultStageMap)
   const stateTypes = new Map(states.map((state) => [state.name, state.type]))
 

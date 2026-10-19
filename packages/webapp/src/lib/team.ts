@@ -7,8 +7,8 @@ export type TeamContext = {
   stages: readonly string[]
   /** States the workflow itself marks as not started */
   notStartedStages: readonly string[]
-  /** How many active people are on the team */
-  teamSize: number
+  /** How many active people are on the team, if known */
+  teamSize: number | undefined
 }
 
 const key = Symbol('team')
