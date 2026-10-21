@@ -1,3 +1,4 @@
+import { loginProviders } from '$lib/server/auth'
 import { createTeam, generateId, getWorkspaceTeams } from '$lib/server/db'
 import { getLinearAccessToken } from '$lib/server/linear'
 import { requireWorkspaceMember } from '$lib/server/workspace'
@@ -10,7 +11,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 
   const token = await getLinearAccessToken(db, env, user.id)
   if (!token) {
-    return { workspace, linearConnected: false, teams: [] }
+    return { workspace, linearConnected: false, linearAvailable: loginProviders(env).linear, teams: [] }
   }
 
   const [linearTeams, addedTeams] = await Promise.all([fetchTeams(token), getWorkspaceTeams(db, workspace.id)])
@@ -19,6 +20,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
   return {
     workspace,
     linearConnected: true,
+    linearAvailable: true,
     teams: linearTeams.map((team) => ({ ...team, added: addedIds.has(team.id) })),
   }
 }

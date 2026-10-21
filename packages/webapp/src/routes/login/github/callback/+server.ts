@@ -1,6 +1,6 @@
 import { createGitHubClient, initializeLucia } from '$lib/server/auth'
 import { createUser, generateId, getUserByGithubId, updateUserGithub } from '$lib/server/db'
-import { redirect } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ url, cookies, platform, locals }) => {
@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
   const clientSecret = platform?.env?.GITHUB_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
-    throw new Error('GitHub OAuth not configured')
+    error(404, 'Sign-in with GitHub is not set up')
   }
 
   const github = createGitHubClient(clientId, clientSecret)

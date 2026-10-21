@@ -32,11 +32,13 @@ export async function getLinearAccessToken(
   if (!user?.linear_access_token) return null
 
   const expiresAt = user.linear_token_expires_at ?? 0
-  if (expiresAt - REFRESH_MARGIN_MS > Date.now() || !user.linear_refresh_token) {
+  const { LINEAR_CLIENT_ID: clientId, LINEAR_CLIENT_SECRET: clientSecret } = env
+  // Refreshing needs the Linear app's credentials; without them, use the token as it is
+  if (expiresAt - REFRESH_MARGIN_MS > Date.now() || !user.linear_refresh_token || !clientId || !clientSecret) {
     return user.linear_access_token
   }
 
-  const client = new OAuth2Client(env.LINEAR_CLIENT_ID, env.LINEAR_CLIENT_SECRET, null)
+  const client = new OAuth2Client(clientId, clientSecret, null)
   const tokens = toLinearTokens(await client.refreshAccessToken(TOKEN_ENDPOINT, user.linear_refresh_token, []))
   await updateUserLinearTokens(db, userId, tokens)
   return tokens.accessToken

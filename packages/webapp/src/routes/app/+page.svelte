@@ -17,7 +17,7 @@ const { data }: { data: PageData } = $props()
       <p class="mt-2 text-sm text-gray-500">Manage your workspaces</p>
     </a>
 
-    {#if !data.user?.linearId}
+    {#if data.providers.linear && !data.user?.linearId}
       <a
         href="/login/linear"
         class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md"
@@ -27,7 +27,7 @@ const { data }: { data: PageData } = $props()
       </a>
     {/if}
 
-    {#if !data.user?.githubId}
+    {#if data.providers.github && !data.user?.githubId}
       <a
         href="/login/github"
         class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md"

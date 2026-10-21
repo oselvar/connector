@@ -36,6 +36,14 @@ export function initializeLucia(D1: D1Database) {
   })
 }
 
+/** Which sign-ins are set up: each needs its client id and secret */
+export function loginProviders(env: App.Platform['env'] | undefined) {
+  return {
+    github: Boolean(env?.GITHUB_CLIENT_ID && env?.GITHUB_CLIENT_SECRET),
+    linear: Boolean(env?.LINEAR_CLIENT_ID && env?.LINEAR_CLIENT_SECRET),
+  }
+}
+
 export function createGitHubClient(clientId: string, clientSecret: string) {
   return new GitHub(clientId, clientSecret, null)
 }

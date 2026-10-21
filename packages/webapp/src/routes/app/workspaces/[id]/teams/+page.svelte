@@ -16,13 +16,17 @@ const { data, form }: { data: PageData; form: ActionData } = $props()
 
   {#if !data.linearConnected}
     <div class="mt-8 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-      <p class="text-sm text-gray-500">Connect your Linear account to see your teams.</p>
-      <a
-        href="/login/linear"
-        class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-      >
-        Connect Linear
-      </a>
+      {#if data.linearAvailable}
+        <p class="text-sm text-gray-500">Connect your Linear account to see your teams.</p>
+        <a
+          href="/login/linear"
+          class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+        >
+          Connect Linear
+        </a>
+      {:else}
+        <p class="text-sm text-gray-500">Sign-in with Linear isn't set up, so Linear teams can't be added yet.</p>
+      {/if}
     </div>
   {:else}
     <ul class="mt-8 divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">

@@ -2,7 +2,7 @@ import { createLinearClient, initializeLucia } from '$lib/server/auth'
 import { createUser, generateId, getUserByLinearId, updateUserLinear } from '$lib/server/db'
 import { toLinearTokens } from '$lib/server/linear'
 import { fetchViewer } from '@oselvar/linear'
-import { redirect } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ url, cookies, platform, locals }) => {
@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform, locals }) =>
   const clientSecret = platform?.env?.LINEAR_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
-    throw new Error('Linear OAuth not configured')
+    error(404, 'Sign-in with Linear is not set up')
   }
 
   const linear = createLinearClient(clientId, clientSecret, `${url.origin}/login/linear/callback`)

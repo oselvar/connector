@@ -9,10 +9,11 @@ declare global {
     interface Platform {
       env: {
         DB: D1Database
-        GITHUB_CLIENT_ID: string
-        GITHUB_CLIENT_SECRET: string
-        LINEAR_CLIENT_ID: string
-        LINEAR_CLIENT_SECRET: string
+        // Each sign-in is offered only when both of its variables are set
+        GITHUB_CLIENT_ID?: string
+        GITHUB_CLIENT_SECRET?: string
+        LINEAR_CLIENT_ID?: string
+        LINEAR_CLIENT_SECRET?: string
       }
     }
   }

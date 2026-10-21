@@ -1,5 +1,5 @@
 import { createLinearClient } from '$lib/server/auth'
-import { redirect } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 import { generateState } from 'arctic'
 import type { RequestHandler } from './$types'
 
@@ -8,7 +8,7 @@ export const GET: RequestHandler = async ({ cookies, url, platform }) => {
   const clientSecret = platform?.env?.LINEAR_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
-    throw new Error('Linear OAuth not configured')
+    error(404, 'Sign-in with Linear is not set up')
   }
 
   const linear = createLinearClient(clientId, clientSecret, `${url.origin}/login/linear/callback`)
