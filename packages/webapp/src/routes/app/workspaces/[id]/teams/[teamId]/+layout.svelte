@@ -1,6 +1,8 @@
 <script lang="ts">
 import { replaceState } from '$app/navigation'
 import { page } from '$app/state'
+import LevelSwitch from '$lib/components/LevelSwitch.svelte'
+import { levelCounts } from '$lib/levels'
 import { readStageRange, setStageRange, stageRangeSearch } from '$lib/stageRange.svelte'
 import { setTeam } from '$lib/team'
 import type { Snippet } from 'svelte'
@@ -31,6 +33,12 @@ setTeam({
 })
 
 const search = $derived(stageRangeSearch(data.stages, range))
+let counts: ReturnType<typeof levelCounts> | undefined = $state()
+$effect(() => {
+  data.issues.then((issues) => {
+    counts = levelCounts(issues)
+  })
+})
 const base = $derived(`/app/workspaces/${data.workspace.id}/teams/${data.team.id}`)
 const tabs = $derived([
   { href: base, label: 'Overview' },
@@ -69,6 +77,8 @@ $effect(() => {
       </a>
     {/each}
   </nav>
+
+  <LevelSwitch bind:level={range.level} {counts} />
 
   {@render children()}
 </div>

@@ -13,11 +13,14 @@ function issue(n: number, spans: LinearIssue['stateHistory']): LinearIssue {
   return {
     id: `issue-${n}`,
     identifier: `ENG-${n}`,
+    title: `Issue ${n}`,
     url: `https://linear.app/oselvar/issue/ENG-${n}`,
     createdAt: '2026-01-01T00:00:00.000Z',
     state: { id: 's-done', name: 'Done', type: 'completed' },
     archivedAt: null,
     assignee: null,
+    parent: null,
+    attachments: { nodes: [] },
     stateHistory: spans,
   }
 }
@@ -163,8 +166,14 @@ describe('LinearWorkItemStream', () => {
           name: 'https://linear.app/oselvar/issue/ENG-5',
           'In Progress': new Date('2026-01-02T00:00:00.000Z'),
         },
+        identifier: 'ENG-5',
+        title: 'Issue 5',
         currentState: 'In Progress',
+        linearState: 'In Progress',
+        linearStateType: 'started',
         assignee: null,
+        parentId: null,
+        pullRequests: [],
       },
       {
         workItem: {
@@ -172,8 +181,54 @@ describe('LinearWorkItemStream', () => {
           name: 'https://linear.app/oselvar/issue/ENG-8',
           Done: new Date('2026-01-02T00:00:00.000Z'),
         },
+        identifier: 'ENG-8',
+        title: 'Issue 8',
         currentState: 'Done',
+        linearState: 'Done',
+        linearStateType: 'completed',
         assignee: null,
+        parentId: null,
+        pullRequests: [],
+      },
+    ])
+  })
+
+  it('finishes an issue when its last PR merged, and keeps its parent', async () => {
+    const merged = {
+      ...issue(9, {
+        nodes: [{ stateId: 's-progress', startedAt: '2026-01-02T00:00:00.000Z', endedAt: null }],
+        pageInfo: lastPage,
+      }),
+      state: { id: 's-progress', name: 'In Progress', type: 'started' as const },
+      parent: { id: 'issue-1' },
+      attachments: {
+        nodes: [
+          {
+            url: 'https://github.com/oselvar/app/pull/12',
+            sourceType: 'github',
+            metadata: { status: 'merged', mergedAt: '2026-01-03T00:00:00.000Z' },
+            updatedAt: '2026-01-04T00:00:00.000Z',
+          },
+          { url: 'https://example.com/spec', sourceType: 'api', metadata: {}, updatedAt: '2026-01-01T00:00:00.000Z' },
+        ],
+      },
+    }
+    const fakeFetch: typeof fetch = async () =>
+      new Response(JSON.stringify({ data: { issues: { nodes: [merged], pageInfo: lastPage } } }))
+    const client = new LinearClient('ENG', 'lin_api_test', fakeFetch)
+
+    const [item] = await collect(createLinearIssueStream(client, states, makeMapFromString('Todo,In Progress,Done')))
+
+    expect(item.workItem.Done).toEqual(new Date('2026-01-03T00:00:00.000Z'))
+    expect(item.currentState).toBe('Done')
+    expect(item.linearState).toBe('In Progress')
+    expect(item.parentId).toBe('issue-1')
+    expect(item.pullRequests).toEqual([
+      {
+        url: 'https://github.com/oselvar/app/pull/12',
+        label: 'oselvar/app#12',
+        status: 'merged',
+        mergedAt: new Date('2026-01-03T00:00:00.000Z'),
       },
     ])
   })

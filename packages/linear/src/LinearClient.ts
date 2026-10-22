@@ -27,11 +27,14 @@ const ISSUES_QUERY = `
       nodes {
         id
         identifier
+        title
         url
         createdAt
         archivedAt
         assignee { displayName }
         state { id name type }
+        parent { id }
+        attachments(first: 20) { nodes { url sourceType metadata updatedAt } }
         stateHistory(first: 50) { ${STATE_SPAN_FIELDS} }
       }
       pageInfo { hasNextPage endCursor }

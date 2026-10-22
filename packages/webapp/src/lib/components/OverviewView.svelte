@@ -1,6 +1,7 @@
 <script lang="ts">
 import { teamCoach, teamLinks } from '$lib/coach'
 import CoachFindingCard from '$lib/components/CoachFindingCard.svelte'
+import DriftPanel from '$lib/components/DriftPanel.svelte'
 import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
 import StateText from '$lib/components/StateText.svelte'
@@ -9,7 +10,7 @@ import { getTeam } from '$lib/team'
 import { coachHeadline } from '@oselvar/core'
 import type { LinearWorkItem } from '@oselvar/linear'
 
-const { issues }: { issues: readonly LinearWorkItem[] } = $props()
+const { issues, all }: { issues: readonly LinearWorkItem[]; all: readonly LinearWorkItem[] } = $props()
 
 const team = getTeam()
 const range = getStageRange()
@@ -44,6 +45,8 @@ const tally = $derived.by(() => {
 <section class="mt-8 rounded-xl bg-white px-4 pb-4 pt-6 shadow-sm sm:px-6">
   <StageRange stages={team.stages} bind:from={range.from} bind:to={range.to} />
 </section>
+
+<DriftPanel issues={all} level={range.level} />
 
 <div class="mt-4 flex flex-col gap-4">
   {#each findings as finding (finding.id)}

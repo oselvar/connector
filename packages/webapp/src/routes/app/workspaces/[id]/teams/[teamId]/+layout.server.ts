@@ -2,7 +2,7 @@ import { getWorkspaceTeam } from '$lib/server/db'
 import { openTeam } from '$lib/server/linear'
 import { requireWorkspaceMember } from '$lib/server/workspace'
 import { orderedMapValues } from '@oselvar/core'
-import { type LinearWorkItem, createLinearIssueStream } from '@oselvar/linear'
+import { createLinearIssueStream, readAll } from '@oselvar/linear'
 import { error } from '@sveltejs/kit'
 import type { LayoutServerLoad } from './$types'
 
@@ -45,15 +45,6 @@ export const load: LayoutServerLoad = async ({ params, platform, locals }) => {
     notStartedStages,
     teamSize,
     // Streamed, so the page renders while issues load from Linear
-    issues: collect(createLinearIssueStream(client, states, defaultStageMap)),
+    issues: readAll(createLinearIssueStream(client, states, defaultStageMap)),
   }
-}
-
-async function collect(stream: ReadableStream<LinearWorkItem>): Promise<LinearWorkItem[]> {
-  const items: LinearWorkItem[] = []
-  const reader = stream.getReader()
-  for (let next = await reader.read(); !next.done; next = await reader.read()) {
-    items.push(next.value)
-  }
-  return items
 }

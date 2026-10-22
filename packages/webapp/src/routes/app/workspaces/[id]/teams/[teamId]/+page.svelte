@@ -11,7 +11,7 @@ const { data }: { data: PageData } = $props()
 </svelte:head>
 
 <IssuesLoading issues={data.issues}>
-  {#snippet children(issues)}
-    <OverviewView {issues} />
+  {#snippet children(issues, all)}
+    <OverviewView {issues} {all} />
   {/snippet}
 </IssuesLoading>

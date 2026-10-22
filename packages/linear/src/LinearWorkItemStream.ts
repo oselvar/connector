@@ -1,17 +1,30 @@
-import { type WorkItem, toWorkItem } from '@oselvar/core'
+import { type WorkItem, orderedMapValues, toWorkItem } from '@oselvar/core'
 
 import type { LinearClient } from './LinearClient'
 import { makeHistoricWorkItem } from './makeHistoricWorkItem'
-import type { LinearIssue, LinearStateSpan, LinearWorkflowState } from './types'
+import { type PullRequest, finishOnMerge, lastMergedAt, toPullRequest } from './pullRequests'
+import type { LinearIssue, LinearStateSpan, LinearWorkflowState, WorkflowStateType } from './types'
 
 /**
  * A work item together with the workflow state its issue is in now.
  */
 export type LinearWorkItem = {
   workItem: WorkItem<string>
+  /** ENG-123 */
+  identifier: string
+  title: string
+  /** The stage the work item is in now: the finish stage once its PRs merged */
   currentState: string
+  /** The state the issue is in in Linear, which may lag behind GitHub */
+  linearState: string
+  /** The kind of state the issue is in in Linear, which means the same in every team */
+  linearStateType: WorkflowStateType
   /** Who the issue is assigned to, if anyone */
   assignee: string | null
+  /** The Linear id of the parent issue, if it is a sub-issue */
+  parentId: string | null
+  /** Linked GitHub pull requests */
+  pullRequests: PullRequest[]
 }
 
 /**
@@ -37,6 +50,9 @@ export function createLinearWorkItemStream(
 /**
  * Creates a ReadableStream that outputs work items with their issue's current state.
  * Canceled, duplicate and abandoned issues are left out, since they will never finish.
+ *
+ * Merging is shipping: an issue is finished when the last of its PRs merged, even if
+ * nobody moved it to a completed state in Linear.
  */
 export function createLinearIssueStream(
   linearClient: LinearClient,
@@ -49,6 +65,9 @@ export function createLinearIssueStream(
   let pageCount = 0
   let done = false
   const itemQueue: LinearWorkItem[] = []
+  const stages = orderedMapValues(stageMap)
+  const completed = states.find((state) => state.type === 'completed' && stageMap.has(state.name))
+  const finishStage = completed ? stageMap.get(completed.name) : undefined
 
   return new ReadableStream<LinearWorkItem>({
     async pull(controller) {
@@ -60,12 +79,24 @@ export function createLinearIssueStream(
         for (const issue of page.nodes) {
           if (!isLive(issue)) continue
           const stateSpans = await fetchAllStateSpans(linearClient, issue)
-          const workItem = toWorkItem(makeHistoricWorkItem(issue, stateSpans, states), stageMap)
-          if (workItem) {
+          const historic = toWorkItem(makeHistoricWorkItem(issue, stateSpans, states), stageMap)
+          if (historic) {
+            const pullRequests = (issue.attachments?.nodes ?? []).flatMap((a) => toPullRequest(a) ?? [])
+            const workItem = finishStage
+              ? finishOnMerge(historic, stages, finishStage, lastMergedAt(pullRequests))
+              : historic
+            const linearState = stageMap.get(issue.state.name) ?? issue.state.name
+            const mergedButOpen = finishStage !== undefined && workItem !== historic && issue.state.type !== 'completed'
             itemQueue.push({
               workItem,
-              currentState: stageMap.get(issue.state.name) ?? issue.state.name,
+              identifier: issue.identifier,
+              title: issue.title,
+              currentState: mergedButOpen ? (finishStage as string) : linearState,
+              linearState,
+              linearStateType: issue.state.type,
               assignee: issue.assignee?.displayName ?? null,
+              parentId: issue.parent?.id ?? null,
+              pullRequests,
             })
           }
         }
@@ -103,4 +134,14 @@ async function fetchAllStateSpans(linearClient: LinearClient, issue: LinearIssue
     pageInfo = next.pageInfo
   }
   return spans
+}
+
+/** Reads a stream to the end */
+export async function readAll<T>(stream: ReadableStream<T>): Promise<T[]> {
+  const items: T[] = []
+  const reader = stream.getReader()
+  for (let next = await reader.read(); !next.done; next = await reader.read()) {
+    items.push(next.value)
+  }
+  return items
 }

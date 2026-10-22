@@ -39,14 +39,26 @@ export type LinearStateSpanConnection = {
   pageInfo: PageInfo
 }
 
+/** A link on an issue, such as a GitHub pull request */
+export type LinearAttachment = {
+  url: string
+  sourceType: string | null
+  /** What the integration that made the attachment knows, such as a PR's status */
+  metadata: Record<string, unknown> | null
+  updatedAt: string
+}
+
 export type LinearIssue = {
   id: string
   identifier: string
+  title: string
   url: string
   createdAt: string
   state: { id: string; name: string; type: WorkflowStateType }
   archivedAt: string | null
   assignee: { displayName: string } | null
+  parent: { id: string } | null
+  attachments: { nodes: LinearAttachment[] }
   stateHistory: LinearStateSpanConnection
 }
 

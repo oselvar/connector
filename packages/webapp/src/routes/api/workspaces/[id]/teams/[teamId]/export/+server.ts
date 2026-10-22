@@ -1,13 +1,14 @@
 import { getWorkspaceTeam } from '$lib/server/db'
 import { openTeam } from '$lib/server/linear'
 import { requireWorkspaceMember } from '$lib/server/workspace'
-import { makeCsvTransform, makeMapFromString, orderedMapValues } from '@oselvar/core'
-import { createLinearWorkItemStream } from '@oselvar/linear'
+import { makeMapFromString, orderedMapValues } from '@oselvar/core'
+import { createLinearIssueStream, formatLinearFlowCsv, readAll } from '@oselvar/linear'
 import { error } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
 /**
- * Streams a team's issues as Oselvar CSV, fetched live from Linear.
+ * A team's issues as flow CSV, fetched live from Linear, in the layout Actionable Agile and
+ * Nave import, with each issue's level, parent and PRs in extra columns.
  * Optional ?stages= overrides the default stages (all non-canceled workflow states).
  */
 export const GET: RequestHandler = async ({ params, platform, locals, url }) => {
@@ -21,12 +22,16 @@ export const GET: RequestHandler = async ({ params, platform, locals, url }) => 
   const { client, states, defaultStageMap } = await openTeam(db, env, team)
   const stagesParam = url.searchParams.get('stages')
   const stageMap = stagesParam ? makeMapFromString(stagesParam) : defaultStageMap
+  const stages = orderedMapValues(stageMap)
 
-  const csv = createLinearWorkItemStream(client, states, stageMap)
-    .pipeThrough(makeCsvTransform(orderedMapValues(stageMap)))
-    .pipeThrough(new TextEncoderStream())
+  // Parents are rolled up from their sub-issues, so every issue has to be in before writing
+  const issues = await readAll(createLinearIssueStream(client, states, stageMap))
 
-  return new Response(csv, {
+  // A parent starts when its first piece of work reaches the first started state
+  const started = states.find((state) => state.type === 'started' && stageMap.has(state.name))
+  const startStage = (started && stageMap.get(started.name)) ?? stages[1] ?? stages[0]
+
+  return new Response(formatLinearFlowCsv(issues, stages, startStage), {
     headers: {
       'Content-Type': 'text/csv',
       'Content-Disposition': `attachment; filename="${team.linear_team_key}.csv"`,
