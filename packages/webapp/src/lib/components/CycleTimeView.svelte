@@ -1,12 +1,13 @@
 <script lang="ts">
 import { rollingColor } from '$lib/colors'
 import ChartCoachNote from '$lib/components/ChartCoachNote.svelte'
-import CycleTimeScatter, { type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
+import CycleTimeScatter, { type GroupMarker, type ScatterPoint } from '$lib/components/CycleTimeScatter.svelte'
 import RangeExplanation from '$lib/components/RangeExplanation.svelte'
 import ScaleToggle from '$lib/components/ScaleToggle.svelte'
 import StageRange from '$lib/components/StageRange.svelte'
 import StateName from '$lib/components/StateName.svelte'
 import { formatDate, formatDuration, formatMonth, issueIdentifier } from '$lib/format'
+import { issueHierarchy, issuesAtLevel } from '$lib/levels'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { type WorkItem, calculateCycleTimes, percentile, rollingPercentile } from '@oselvar/core'
 import type { LinearWorkItem } from '@oselvar/linear'
@@ -15,11 +16,14 @@ const {
   items,
   issues,
   stages,
+  all = [],
 }: {
   items: readonly WorkItem<string>[]
   /** The same issues, with who they are assigned to, for the coach */
   issues: readonly LinearWorkItem[]
   stages: readonly string[]
+  /** Every issue at both levels, to show which top-level item a leaf belongs to */
+  all?: readonly LinearWorkItem[]
 } = $props()
 
 const range = getStageRange()
@@ -30,6 +34,30 @@ const queueName = $derived(stages[range.from])
 const fromName = $derived(stages[range.from + 1])
 const toName = $derived(stages[range.to])
 
+// For leaves: the top-level item each one is part of, if any
+const groups = $derived.by(() => {
+  const result = new Map<string, { id: string; label: string }>()
+  if (range.level !== 'leaves') return result
+  const hierarchy = issueHierarchy(all)
+  for (const leaf of hierarchy.leaves) {
+    const top = hierarchy.topLevelOf(leaf)
+    if (top !== leaf) result.set(leaf.id, { id: top.id, label: `${top.issue.identifier} ${top.issue.title}` })
+  }
+  return result
+})
+const markers = $derived(
+  new Map<string, GroupMarker>(
+    range.level !== 'leaves'
+      ? []
+      : calculateCycleTimes(
+          issuesAtLevel(all, stages, { ...range, level: 'top' }).map((issue) => issue.workItem),
+          stages,
+          fromName,
+          toName
+        ).map((item) => [item.id, item])
+  )
+)
+
 const points: ScatterPoint[] = $derived(
   calculateCycleTimes(items, stages, fromName, toName)
     .map((item) => ({
@@ -37,6 +65,7 @@ const points: ScatterPoint[] = $derived(
       url: item.name ?? '',
       completionDate: item.completionDate,
       cycleTimeDays: item.cycleTimeDays,
+      group: groups.get(item.id),
     }))
     .sort((a, b) => a.completionDate.getTime() - b.completionDate.getTime())
 )
@@ -104,7 +133,7 @@ const slowestFirst = $derived([...points].sort((a, b) => b.cycleTimeDays - a.cyc
 
   {#if points.length > 0}
     <div class="mt-3">
-      <CycleTimeScatter {points} {percentiles} {rolling} {log} {fromName} {toName} />
+      <CycleTimeScatter {points} {percentiles} {rolling} {log} {fromName} {toName} {markers} />
     </div>
   {/if}
 </section>

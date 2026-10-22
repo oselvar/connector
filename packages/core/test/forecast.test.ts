@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { forecastHowMany, forecastWhen, seededRandom } from '../src/index.js'
+import { forecastHowMany, forecastWhen, forecastWhenSplit, seededRandom } from '../src/index.js'
 
 describe('forecastHowMany', () => {
   it('adds up random past days', () => {
@@ -22,5 +22,12 @@ describe('forecastWhen', () => {
 
   it('has no answer when nothing ever finished', () => {
     expect(forecastWhen([0, 0], 7, 2, seededRandom(1))).toEqual([])
+  })
+})
+
+describe('forecastWhenSplit', () => {
+  it('picks how many items each run has to finish', () => {
+    const results = forecastWhenSplit([1], [1, 5], 1000, seededRandom(1))
+    expect(new Set(results)).toEqual(new Set([1, 5]))
   })
 })

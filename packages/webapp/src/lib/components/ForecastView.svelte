@@ -6,10 +6,10 @@ import StateName from '$lib/components/StateName.svelte'
 import { formatDate } from '$lib/format'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { getTeam } from '$lib/team'
+import { HISTORY_DAYS as historyDays, throughputHistory } from '$lib/throughput'
 import {
   MILLISECONDS_PER_DAY as DAY,
   type WorkItem,
-  dailyThroughput,
   forecastHowMany,
   forecastWhen,
   inProgressAt,
@@ -32,7 +32,6 @@ const range = getStageRange()
 const now = Date.now()
 const today = Math.floor(now / DAY) * DAY
 const runs = 10000
-const historyDays = 90
 const chances = [
   { percent: 95, label: 'Almost certain' },
   { percent: 85, label: 'Likely' },
@@ -45,14 +44,7 @@ const fromName = $derived(team.stages[range.from + 1])
 const toName = $derived(team.stages[range.to])
 const timeline = $derived(makeFlowTimeline(items, team.stages, fromName, toName))
 
-// Past daily throughput to sample from: the last 90 days, or since the first issue started
-const history = $derived.by(() => {
-  const starts = timeline.items.map(({ crossed }) => crossed[0]).filter((t): t is number => t !== undefined)
-  if (starts.length === 0) return []
-  const first = Math.floor(Math.min(...starts) / DAY) * DAY
-  const start = Math.max(today - (historyDays - 1) * DAY, first)
-  return dailyThroughput(timeline, start, Math.round((today - start) / DAY) + 1)
-})
+const history = $derived(throughputHistory(timeline, today))
 const finishedInHistory = $derived(history.reduce((sum, n) => sum + n, 0))
 
 // How many by a date

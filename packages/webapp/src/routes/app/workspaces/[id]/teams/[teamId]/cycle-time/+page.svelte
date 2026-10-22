@@ -11,7 +11,7 @@ const { data }: { data: PageData } = $props()
 </svelte:head>
 
 <IssuesLoading issues={data.issues}>
-  {#snippet children(issues)}
-    <CycleTimeView {issues} items={issues.map((issue) => issue.workItem)} stages={data.stages} />
+  {#snippet children(issues, all)}
+    <CycleTimeView {issues} {all} items={issues.map((issue) => issue.workItem)} stages={data.stages} />
   {/snippet}
 </IssuesLoading>

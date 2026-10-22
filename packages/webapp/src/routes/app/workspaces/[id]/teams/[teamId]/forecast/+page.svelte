@@ -1,9 +1,12 @@
 <script lang="ts">
+import FeatureForecast from '$lib/components/FeatureForecast.svelte'
 import ForecastView from '$lib/components/ForecastView.svelte'
 import IssuesLoading from '$lib/components/IssuesLoading.svelte'
+import { getStageRange } from '$lib/stageRange.svelte'
 import type { PageData } from './$types'
 
 const { data }: { data: PageData } = $props()
+const range = getStageRange()
 </script>
 
 <svelte:head>
@@ -11,7 +14,10 @@ const { data }: { data: PageData } = $props()
 </svelte:head>
 
 <IssuesLoading issues={data.issues}>
-  {#snippet children(issues)}
+  {#snippet children(issues, all)}
     <ForecastView {issues} items={issues.map((issue) => issue.workItem)} />
+    {#if range.level === 'top'}
+      <FeatureForecast {all} />
+    {/if}
   {/snippet}
 </IssuesLoading>

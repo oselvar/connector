@@ -44,9 +44,26 @@ export function forecastWhen(
   random: () => number,
   maxDays = 3650
 ): number[] {
-  if (dailyThroughput.length === 0 || dailyThroughput.every((n) => n === 0)) return []
+  return forecastWhenSplit(dailyThroughput, [count], runs, random, maxDays)
+}
+
+/**
+ * How many days until a big item is done, when it is split into small items that finish at
+ * the team's daily throughput. Each run first picks how many small items the big one splits
+ * into from `counts`, such as how many sub-issues past big items had, so the forecast works
+ * before the item is split up. This is Prateek Singh's way of forecasting features.
+ */
+export function forecastWhenSplit(
+  dailyThroughput: readonly number[],
+  counts: readonly number[],
+  runs: number,
+  random: () => number,
+  maxDays = 3650
+): number[] {
+  if (counts.length === 0 || dailyThroughput.length === 0 || dailyThroughput.every((n) => n === 0)) return []
   const results: number[] = []
   for (let run = 0; run < runs; run++) {
+    const count = counts.length === 1 ? counts[0] : counts[Math.floor(random() * counts.length)]
     let total = 0
     let day = 0
     while (total < count && day < maxDays) {

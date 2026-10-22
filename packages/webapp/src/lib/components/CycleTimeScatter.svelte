@@ -10,6 +10,14 @@ export type ScatterPoint = {
   url: string
   completionDate: Date
   cycleTimeDays: number
+  /** The top-level item this is part of, if it is a sub-issue */
+  group?: { id: string; label: string }
+}
+
+/** A finished top-level item, drawn when one of its leaves is hovered */
+export type GroupMarker = {
+  completionDate: Date
+  cycleTimeDays: number
 }
 
 export type PercentileLine = {
@@ -25,8 +33,11 @@ const {
   log,
   fromName,
   toName,
+  markers = new Map(),
 }: {
   points: readonly ScatterPoint[]
+  /** Finished top-level items by id, to join their leaves to */
+  markers?: ReadonlyMap<string, GroupMarker>
   percentiles: readonly PercentileLine[]
   /** A rolling percentile, one point per day; missing days break the line */
   rolling: readonly { date: Date; value: number }[]
@@ -85,6 +96,17 @@ const rollingPath = $derived.by(() => {
 
 let hovered = $state<number | null>(null)
 const hoveredPoint = $derived(hovered === null ? null : points[hovered])
+// The hovered point's siblings: the other leaves of the same top-level item
+const group = $derived(hoveredPoint?.group?.id)
+const inGroup = (i: number) => group !== undefined && points[i].group?.id === group
+const siblings = $derived(group === undefined ? 0 : points.filter((p) => p.group?.id === group).length)
+const marker = $derived.by(() => {
+  const found = group === undefined ? undefined : markers.get(group)
+  if (!found) return undefined
+  // Keep it on the chart even if the whole item took longer than any of its leaves
+  const cy = Math.max(margin.top, Math.min(height - margin.bottom, y(Math.max(found.cycleTimeDays, y.domain()[0]))))
+  return { cx: x(found.completionDate), cy, days: found.cycleTimeDays }
+})
 
 function onPointerMove(event: PointerEvent) {
   const rect = (event.currentTarget as SVGSVGElement).getBoundingClientRect()
@@ -156,9 +178,35 @@ function onClick() {
 
     <path d={rollingPath} fill="none" stroke={rollingColor} stroke-width="2" stroke-linejoin="round" />
 
+    {#if marker}
+      {#each dots as dot, i}
+        {#if inGroup(i)}
+          <line x1={dot.cx} y1={dot.cy} x2={marker.cx} y2={marker.cy} stroke="#ea580c" stroke-width="1.25" stroke-dasharray="3 3" />
+        {/if}
+      {/each}
+    {/if}
+
     {#each dots as dot, i}
-      <circle cx={dot.cx} cy={dot.cy} r={i === hovered ? 6.5 : 4} class="fill-indigo-600 stroke-white" stroke-width="2" />
+      {@const related = inGroup(i)}
+      <circle
+        cx={dot.cx}
+        cy={dot.cy}
+        r={i === hovered ? 6.5 : related ? 5.5 : 4}
+        class="fill-indigo-600"
+        fill-opacity={group !== undefined && !related ? 0.2 : 1}
+        stroke={related ? '#ea580c' : 'white'}
+        stroke-width="2"
+      />
     {/each}
+
+    {#if marker}
+      <path
+        d="M{marker.cx} {marker.cy - 9}L{marker.cx + 9} {marker.cy}L{marker.cx} {marker.cy + 9}L{marker.cx - 9} {marker.cy}Z"
+        fill="white"
+        stroke="#ea580c"
+        stroke-width="2"
+      />
+    {/if}
   </svg>
 
   {#if hoveredPoint && hovered !== null}
@@ -173,6 +221,13 @@ function onClick() {
       <div class="font-semibold text-gray-900">{hoveredPoint.identifier}</div>
       <div class="mt-0.5 text-gray-700">{formatDuration(hoveredPoint.cycleTimeDays)} from start to finish</div>
       <div class="mt-0.5 text-gray-500">Reached <StateName name={toName} /> {formatDate(hoveredPoint.completionDate)}</div>
+      {#if hoveredPoint.group}
+        <div class="mt-1.5 text-gray-700">Part of {hoveredPoint.group.label}</div>
+        <div class="mt-0.5 text-gray-500">
+          {siblings === 1 ? 'Its only finished leaf here' : `${siblings} of its leaves are here, ringed`}
+          {#if marker}· the whole item took {formatDuration(marker.days)} (diamond){/if}
+        </div>
+      {/if}
       <div class="mt-1.5 text-indigo-600">Click to open in Linear</div>
     </div>
   {/if}

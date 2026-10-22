@@ -47,6 +47,7 @@ const tabs = $derived([
   { href: `${base}/flow`, label: 'Cumulative flow' },
   { href: `${base}/throughput`, label: 'Throughput' },
   { href: `${base}/wip`, label: 'Active work' },
+  { href: `${base}/timeline`, label: 'Timeline' },
   { href: `${base}/forecast`, label: 'Forecast' },
 ])
 
