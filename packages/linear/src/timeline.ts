@@ -1,7 +1,7 @@
-import { MILLISECONDS_PER_DAY as DAY, type Hierarchy, crossedAt, percentile } from '@oselvar/core'
+import { MILLISECONDS_PER_DAY as DAY, type Hierarchy, crossedAt, percentile, plural } from '@oselvar/core'
 
 import type { LinearWorkItem } from './LinearWorkItemStream'
-import { type IssueNode, leavesThatCount, rolledUpWorkItem } from './rollUp'
+import { type IssueNode, leavesThatCount, leftBehind, rolledUpWorkItem } from './rollUp'
 
 export type LeafStatus = 'waiting' | 'active' | 'finished'
 
@@ -63,6 +63,8 @@ export type ItemSummary = {
   waiting: number
   /** Leaves added in the last 7 days */
   addedThisWeek: number
+  /** Leaves still open when the item was completed in Linear, see leftBehind */
+  leftBehind: number
   start?: Date
   end?: Date
 }
@@ -77,7 +79,7 @@ export function summarizeItem(
   now: Date,
   agingLimitDays: number | undefined
 ): ItemSummary {
-  const leaves = leavesThatCount(node, hierarchy, stages, stages[startIndex])
+  const leaves = leavesThatCount(node, hierarchy, stages)
   const progress = leaves.map((leaf) => leafProgress(leaf.issue, stages, startIndex, finishIndex))
   const count = (status: LeafStatus) => progress.filter((p) => p.status === status).length
   const aging =
@@ -109,6 +111,7 @@ export function summarizeItem(
     aging,
     waiting: count('waiting'),
     addedThisWeek: progress.filter((p) => now.getTime() - p.added.getTime() < 7 * DAY).length,
+    leftBehind: leftBehind(node, hierarchy, stages, stages[startIndex]).length,
     start: crossedAt(rolled, stages, startIndex) ?? end,
     end,
   }
@@ -154,6 +157,8 @@ export function rankReason(item: ItemSummary): string {
     case 'idle':
       return item.total === 1 ? 'Not started.' : `${item.total} sub-issues, none started.`
     case 'finished':
-      return `${item.total} sub-issues finished.`
+      return item.leftBehind > 0
+        ? `${plural(item.total, 'sub-issue', 'sub-issues')} finished. ${plural(item.leftBehind, 'sub-issue was', 'sub-issues were')} left open when it was closed.`
+        : `${plural(item.total, 'sub-issue', 'sub-issues')} finished.`
   }
 }

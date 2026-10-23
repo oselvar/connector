@@ -11,25 +11,41 @@ export function issueHierarchy(issues: readonly LinearWorkItem[]): Hierarchy<Iss
 
 /**
  * The leaves that decide when a parent is finished. Normally all of them. Once the parent is
- * completed in Linear, leaves that never started are left out: closing the parent closes its
- * scope, and parked follow-ups were never committed to.
+ * completed in Linear, only the leaves that got as far as the parent count: closing the parent
+ * closes its scope. Parked follow-ups were never committed to, and work left open was left
+ * behind, see leftBehind.
  */
 export function leavesThatCount(
+  node: IssueNode,
+  hierarchy: Hierarchy<IssueNode>,
+  stages: readonly string[]
+): IssueNode[] {
+  const leaves = hierarchy.leavesOf(node)
+  if (node.issue.linearStateType !== 'completed') return leaves
+  const parentIndex = stages.indexOf(node.issue.currentState)
+  const doneIndex = parentIndex === -1 ? stages.length - 1 : parentIndex
+  return leaves.filter((leaf) => crossedAt(leaf.issue.workItem, stages, doneIndex) !== undefined)
+}
+
+/** Leaves that started, but were still open when their parent was completed in Linear */
+export function leftBehind(
   node: IssueNode,
   hierarchy: Hierarchy<IssueNode>,
   stages: readonly string[],
   startStage: string
 ): IssueNode[] {
-  const leaves = hierarchy.leavesOf(node)
-  if (node.issue.linearStateType !== 'completed') return leaves
+  if (node.issue.linearStateType !== 'completed') return []
+  const counted = new Set(leavesThatCount(node, hierarchy, stages))
   const startIndex = stages.indexOf(startStage)
-  return leaves.filter((leaf) => crossedAt(leaf.issue.workItem, stages, startIndex) !== undefined)
+  return hierarchy
+    .leavesOf(node)
+    .filter((leaf) => !counted.has(leaf) && crossedAt(leaf.issue.workItem, stages, startIndex) !== undefined)
 }
 
 /**
  * A parent's work item, rolled up from the work under it: it starts when its first piece of
  * work starts, but not before it was created, and finishes when the last leaf that counts finishes. An issue without
- * sub-issues, or a completed parent whose sub-issues never started, is its own work item.
+ * sub-issues, or a completed parent whose sub-issues never got as far, is its own work item.
  */
 export function rolledUpWorkItem(
   node: IssueNode,
@@ -38,7 +54,7 @@ export function rolledUpWorkItem(
   startStage: string
 ): WorkItem<string> {
   const descendants = hierarchy.descendantsOf(node)
-  const leaves = leavesThatCount(node, hierarchy, stages, startStage)
+  const leaves = leavesThatCount(node, hierarchy, stages)
   const { workItem } = node.issue
   if (descendants.length === 0 || leaves.length === 0) return workItem
   const rolled = rollUpStages(

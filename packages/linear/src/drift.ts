@@ -1,6 +1,8 @@
+import { crossedAt } from '@oselvar/core'
+
 import type { LinearWorkItem } from './LinearWorkItemStream'
 import { isOpen, lastMergedAt } from './pullRequests'
-import { issueHierarchy, leavesThatCount } from './rollUp'
+import { issueHierarchy } from './rollUp'
 
 export type DriftKind =
   /** A leaf whose PRs all merged, but which is still open in Linear */
@@ -46,11 +48,14 @@ export function findDrift(issues: readonly LinearWorkItem[], stages: readonly st
     }
   }
 
+  const startIndex = stages.indexOf(startStage)
   const parents = nodes.filter((node) => hierarchy.childrenOf(node).length > 0)
   for (const node of parents) {
-    const leaves = leavesThatCount(node, hierarchy, stages, startStage)
-    const finished = leaves.filter((leaf) => isFinished(leaf.issue)).length
     const completed = node.issue.linearStateType === 'completed'
+    const leaves = hierarchy
+      .leavesOf(node)
+      .filter((leaf) => !completed || crossedAt(leaf.issue.workItem, stages, startIndex) !== undefined)
+    const finished = leaves.filter((leaf) => isFinished(leaf.issue)).length
     const counts = { total: leaves.length, finished }
     if (completed && finished < leaves.length) {
       result.push({ kind: 'parent-done-work-open', issue: node.issue, leaves: counts })

@@ -52,7 +52,7 @@ const counts = $derived(
       const done = crossedAt(rolled, stages, toIndex)
       return done !== undefined && done.getTime() >= today - HISTORY_DAYS * DAY
     })
-    .map((node) => leavesThatCount(node, hierarchy, stages, stages[range.from + 1]).length)
+    .map((node) => leavesThatCount(node, hierarchy, stages).length)
 )
 const p85 = $derived(counts.length === 0 ? undefined : Math.ceil(percentile(counts, 85) ?? 0))
 const buckets = $derived(

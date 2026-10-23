@@ -119,3 +119,20 @@ describe('rankReason', () => {
     expect(rankReason(summary as ItemSummary)).toBe('The last sub-issue is stuck. Finishing it ships the item.')
   })
 })
+
+describe('a top-level item completed in Linear', () => {
+  const parent = issue('parent', {}, { currentState: 'Done', linearState: 'Done', linearStateType: 'completed' })
+  const child = (id: string, workItem: Record<string, Date>) => issue(id, workItem, { parentId: 'parent' })
+
+  it('is finished when the work that got as far as it is, and counts the rest as left behind', () => {
+    const hierarchy = issueHierarchy([
+      parent,
+      child('done', { 'In Progress': day(2), Done: day(3) }),
+      child('abandoned', { 'In Progress': day(2) }),
+      child('parked', { Backlog: day(1) }),
+    ])
+    const summary = summarizeItem(hierarchy.topLevel[0], hierarchy, stages, start, finish, now, 2)
+    expect(summary).toMatchObject({ group: 'finished', total: 1, finished: 1, leftBehind: 1, end: day(3) })
+    expect(rankReason(summary)).toBe('1 sub-issue finished. 1 sub-issue was left open when it was closed.')
+  })
+})

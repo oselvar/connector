@@ -13,6 +13,7 @@ import {
   agingLimit,
   leafProgress,
   leavesThatCount,
+  leftBehind,
   summarizeItem,
 } from '@oselvar/linear'
 
@@ -49,10 +50,12 @@ const limit = $derived(
 )
 const summary = $derived(node && summarizeItem(node, hierarchy, stages, startIndex, finishIndex, new Date(now), limit))
 
+const behind = $derived(node ? leftBehind(node, hierarchy, stages, stages[startIndex]) : [])
+
 type Leaf = { node: IssueNode; progress: LeafProgress; aging: boolean; parent: IssueNode | undefined }
 const leaves: Leaf[] = $derived(
   node
-    ? leavesThatCount(node, hierarchy, stages, stages[startIndex]).map((leaf) => {
+    ? leavesThatCount(node, hierarchy, stages).map((leaf) => {
         const progress = leafProgress(leaf.issue, stages, startIndex, finishIndex)
         const aging =
           limit !== undefined &&
@@ -79,7 +82,7 @@ const x = (time: number) => Math.min(trackWidth, Math.max(0, ((time - windowStar
 const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 const dayMonth = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
 const ticks = $derived.by(() => {
-  const step = [3, 6, 12, 24, 48, 168].find((hours) => hours * pxPerHour >= 64) ?? 336
+  const step = [3, 6, 12, 24, 48, 168].find((hours) => hours * pxPerHour >= 88) ?? 336
   const first = new Date(windowStart)
   first.setHours(0, 0, 0, 0)
   const result: { x: number; label: string; major: boolean }[] = []
@@ -331,6 +334,21 @@ const fills: Record<Bar['kind'], string> = {
       than 85% of your sub-issues take.
     {/if}
   </p>
+  {#if behind.length > 0}
+    <p class="mt-3.5 max-w-[66ch] text-base leading-normal text-gray-600">
+      <span class="whitespace-nowrap rounded-full border border-orange-300 bg-orange-50 px-2 text-xs font-semibold text-orange-800"
+        >{issue.linearState}, but work is open</span
+      >
+      {plural(behind.length, 'sub-issue was', 'sub-issues were')} still open when {issue.identifier} was closed, so {behind.length === 1
+        ? 'it doesn’t'
+        : 'they don’t'} count here:
+      {#each behind as leaf, i}<a href={leaf.issue.workItem.name} target="_blank" rel="noreferrer" class="font-mono text-[13px] font-semibold text-indigo-600 hover:text-indigo-800"
+          >{leaf.issue.identifier}</a
+        >{i < behind.length - 1 ? ', ' : ''}{/each}. Close {behind.length === 1 ? 'it' : 'them'}, or move {behind.length === 1
+        ? 'it'
+        : 'them'} to an item of {behind.length === 1 ? 'its' : 'their'} own.
+    </p>
+  {/if}
 
   <div class="mt-7 flex flex-wrap gap-x-10 gap-y-4 rounded-xl bg-white px-6 py-5 shadow-sm">
     <div class="flex min-w-[120px] flex-col gap-0.5">
