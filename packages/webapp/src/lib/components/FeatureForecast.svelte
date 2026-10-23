@@ -10,10 +10,9 @@ import {
   forecastWhenSplit,
   makeFlowTimeline,
   percentile,
-  rollUpStages,
   seededRandom,
 } from '@oselvar/core'
-import type { LinearWorkItem } from '@oselvar/linear'
+import { type LinearWorkItem, leavesThatCount, rolledUpWorkItem } from '@oselvar/linear'
 
 /**
  * When will a top-level item be done? Forecasts from how many sub-issues top-level items
@@ -49,18 +48,11 @@ const history = $derived(throughputHistory(leafTimeline, today))
 const counts = $derived(
   hierarchy.topLevel
     .filter((node) => {
-      const leaves = hierarchy.leavesOf(node)
-      const rolled = rollUpStages(
-        node.issue.workItem,
-        hierarchy.descendantsOf(node).map((d) => d.issue.workItem),
-        leaves.map((leaf) => leaf.issue.workItem),
-        stages,
-        stages[range.from + 1]
-      )
-      const done = crossedAt({ id: node.id, ...rolled }, stages, toIndex)
+      const rolled = rolledUpWorkItem(node, hierarchy, stages, stages[range.from + 1])
+      const done = crossedAt(rolled, stages, toIndex)
       return done !== undefined && done.getTime() >= today - HISTORY_DAYS * DAY
     })
-    .map((node) => hierarchy.leavesOf(node).length)
+    .map((node) => leavesThatCount(node, hierarchy, stages, stages[range.from + 1]).length)
 )
 const p85 = $derived(counts.length === 0 ? undefined : Math.ceil(percentile(counts, 85) ?? 0))
 const buckets = $derived(

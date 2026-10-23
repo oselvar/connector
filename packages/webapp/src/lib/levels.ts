@@ -1,12 +1,8 @@
 import type { Level, StageRange } from '$lib/stageRange.svelte'
-import { type Hierarchy, makeHierarchy, rollUpStages } from '@oselvar/core'
-import type { LinearWorkItem } from '@oselvar/linear'
+import type { Hierarchy } from '@oselvar/core'
+import { type IssueNode, type LinearWorkItem, issueHierarchy, rolledUpWorkItem } from '@oselvar/linear'
 
-export type IssueNode = { id: string; parentId: string | null; issue: LinearWorkItem }
-
-export function issueHierarchy(issues: readonly LinearWorkItem[]): Hierarchy<IssueNode> {
-  return makeHierarchy(issues.map((issue) => ({ id: issue.workItem.id, parentId: issue.parentId, issue })))
-}
+export { type IssueNode, issueHierarchy }
 
 /**
  * The work items at one level. Leaves are issues without sub-issues. Top-level items are
@@ -38,19 +34,12 @@ function rollUp(
   const descendants = hierarchy.descendantsOf(node)
   if (descendants.length === 0) return node.issue
 
-  const { workItem } = node.issue
-  const rolled = rollUpStages(
-    workItem,
-    descendants.map((d) => d.issue.workItem),
-    hierarchy.leavesOf(node).map((leaf) => leaf.issue.workItem),
-    stages,
-    startStage
-  )
+  const workItem = rolledUpWorkItem(node, hierarchy, stages, startStage)
   // It is in the last stage its work reached
-  const reached = stages.filter((stage) => rolled[stage] !== undefined)
+  const reached = stages.filter((stage) => workItem[stage] !== undefined)
   return {
     ...node.issue,
-    workItem: { id: workItem.id, name: workItem.name, ...rolled } as LinearWorkItem['workItem'],
+    workItem,
     currentState: reached[reached.length - 1] ?? node.issue.currentState,
     pullRequests: [node.issue, ...descendants.map((d) => d.issue)].flatMap((issue) => issue.pullRequests),
   }

@@ -26,7 +26,9 @@ function issue(id: string, overrides: Partial<LinearWorkItem> = {}): LinearWorkI
 }
 
 const done = { linearState: 'Done', linearStateType: 'completed' as const }
-const kinds = (issues: LinearWorkItem[]) => findDrift(issues).map((d) => [d.kind, d.issue.identifier])
+const stages = ['Backlog', 'In Progress', 'Done']
+const kinds = (issues: LinearWorkItem[]) =>
+  findDrift(issues, stages, 'In Progress').map((d) => [d.kind, d.issue.identifier])
 
 describe('findDrift', () => {
   it('finds leaves whose PRs merged while the issue is open, and the other way round', () => {
@@ -44,14 +46,24 @@ describe('findDrift', () => {
   })
 
   it('finds parents that disagree with the work under them', () => {
-    const drift = findDrift([
-      issue('parent-done', done),
-      issue('a', { parentId: 'parent-done' }),
-      issue('b', { ...done, parentId: 'parent-done' }),
-      issue('parent-open'),
-      issue('c', { parentId: 'parent-open', pullRequests: [merged] }),
-      issue('d', { ...done, parentId: 'parent-open' }),
-    ])
+    const at = (id: string, stage: string) => ({ id, [stage]: new Date('2026-01-01') }) as LinearWorkItem['workItem']
+    const drift = findDrift(
+      [
+        issue('parent-done', done),
+        issue('a', { parentId: 'parent-done', workItem: at('a', 'In Progress') }),
+        issue('b', { ...done, parentId: 'parent-done', workItem: at('b', 'Done') }),
+        // Never started, so closing the parent closed it
+        issue('parked', { parentId: 'parent-done', linearState: 'Backlog', linearStateType: 'backlog' }),
+        issue('parent-open'),
+        issue('c', { parentId: 'parent-open', pullRequests: [merged] }),
+        issue('d', { ...done, parentId: 'parent-open' }),
+        issue('parent-closed', done),
+        issue('e', { ...done, parentId: 'parent-closed', workItem: at('e', 'Done') }),
+        issue('f', { parentId: 'parent-closed', linearState: 'Backlog', linearStateType: 'backlog' }),
+      ],
+      stages,
+      'In Progress'
+    )
     expect(drift.filter((d) => d.leaves).map((d) => [d.kind, d.issue.identifier, d.leaves])).toEqual([
       ['parent-done-work-open', 'parent-done', { total: 2, finished: 1 }],
       ['work-done-parent-open', 'parent-open', { total: 2, finished: 2 }],

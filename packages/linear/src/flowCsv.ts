@@ -1,7 +1,8 @@
-import { type FlowCsvRow, formatFlowCsv, makeHierarchy, rollUpStages } from '@oselvar/core'
+import { type FlowCsvRow, formatFlowCsv } from '@oselvar/core'
 
 import type { LinearWorkItem } from './LinearWorkItemStream'
 import { lastMergedAt } from './pullRequests'
+import { issueHierarchy, rolledUpWorkItem } from './rollUp'
 
 /**
  * The extra columns after the stages. To look at one level in a tool that imports the CSV,
@@ -19,25 +20,15 @@ export function formatLinearFlowCsv(
   stages: readonly string[],
   startStage: string
 ): string {
-  const nodes = issues.map((issue) => ({ id: issue.workItem.id, parentId: issue.parentId, issue }))
-  const hierarchy = makeHierarchy(nodes)
+  const hierarchy = issueHierarchy(issues)
+  const nodes = [...hierarchy.topLevel.flatMap((top) => [top, ...hierarchy.descendantsOf(top)])]
 
   const rows: FlowCsvRow[] = nodes.map((node) => {
     const { issue } = node
     const parent = hierarchy.parentOf(node)
     const children = hierarchy.childrenOf(node)
-    const descendants = hierarchy.descendantsOf(node)
     const merged = lastMergedAt(issue.pullRequests)
-    const stageDates =
-      descendants.length === 0
-        ? (issue.workItem as FlowCsvRow['stages'])
-        : rollUpStages(
-            issue.workItem,
-            descendants.map((d) => d.issue.workItem),
-            hierarchy.leavesOf(node).map((leaf) => leaf.issue.workItem),
-            stages,
-            startStage
-          )
+    const stageDates = rolledUpWorkItem(node, hierarchy, stages, startStage) as FlowCsvRow['stages']
 
     return {
       id: issue.identifier,

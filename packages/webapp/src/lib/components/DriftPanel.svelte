@@ -1,7 +1,8 @@
 <script lang="ts">
 import StateName from '$lib/components/StateName.svelte'
 import { formatDuration, plural } from '$lib/format'
-import type { Level } from '$lib/stageRange.svelte'
+import { type Level, getStageRange } from '$lib/stageRange.svelte'
+import { getTeam } from '$lib/team'
 import { type Drift, type DriftKind, type LinearWorkItem, findDrift, isOpen, lastMergedAt } from '@oselvar/linear'
 
 /**
@@ -38,7 +39,9 @@ const groupsByLevel: Record<Level, { kind: DriftKind; title: string; hint: strin
 }
 
 const now = Date.now()
-const drift = $derived(findDrift(issues))
+const team = getTeam()
+const range = getStageRange()
+const drift = $derived(findDrift(issues, team.stages, team.stages[range.from + 1]))
 const groups = $derived(
   groupsByLevel[level]
     .map((group) => ({ ...group, items: drift.filter((d) => d.kind === group.kind) }))

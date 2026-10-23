@@ -5,13 +5,14 @@ import { formatDuration, plural } from '$lib/format'
 import { type IssueNode, issueHierarchy } from '$lib/levels'
 import { getStageRange } from '$lib/stageRange.svelte'
 import { getTeam } from '$lib/team'
-import { MILLISECONDS_PER_DAY as DAY, type StagedItem, crossedAt, percentile, rollUpStages } from '@oselvar/core'
+import { MILLISECONDS_PER_DAY as DAY, type StagedItem, crossedAt, percentile } from '@oselvar/core'
+import { type LinearWorkItem, rolledUpWorkItem } from '@oselvar/linear'
 
 /**
  * Top-level items with their sub-issues on a timeline: when each piece of work was waiting,
  * active and finished, and when its PRs merged. Shows how a big item's work moves, or stalls.
  */
-const { all }: { all: readonly import('@oselvar/linear').LinearWorkItem[] } = $props()
+const { all }: { all: readonly LinearWorkItem[] } = $props()
 
 const team = getTeam()
 const range = getStageRange()
@@ -60,16 +61,7 @@ const rows: Row[] = $derived(
     .filter((node) => hierarchy.childrenOf(node).length > 0)
     .map((node) => {
       const leaves = hierarchy.leavesOf(node)
-      const rolled = {
-        id: node.id,
-        ...rollUpStages(
-          node.issue.workItem,
-          hierarchy.descendantsOf(node).map((d) => d.issue.workItem),
-          leaves.map((leaf) => leaf.issue.workItem),
-          stages,
-          stages[range.from + 1]
-        ),
-      }
+      const rolled = rolledUpWorkItem(node, hierarchy, stages, stages[range.from + 1])
       const start = time(rolled, range.from + 1)
       const end = time(rolled, range.to)
 
@@ -137,17 +129,7 @@ const ticks = $derived(
 // How long finished top-level items took, to judge the open ones by
 const finishedDays = $derived(
   hierarchy.topLevel.flatMap((node) => {
-    const leaves = hierarchy.leavesOf(node)
-    const rolled = {
-      id: node.id,
-      ...rollUpStages(
-        node.issue.workItem,
-        hierarchy.descendantsOf(node).map((d) => d.issue.workItem),
-        leaves.map((leaf) => leaf.issue.workItem),
-        stages,
-        stages[range.from + 1]
-      ),
-    }
+    const rolled = rolledUpWorkItem(node, hierarchy, stages, stages[range.from + 1])
     const start = time(rolled, range.from + 1)
     const end = time(rolled, range.to)
     return start !== undefined && end !== undefined && end > start ? [(end - start) / DAY] : []

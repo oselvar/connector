@@ -1,7 +1,6 @@
-import { makeHierarchy } from '@oselvar/core'
-
 import type { LinearWorkItem } from './LinearWorkItemStream'
 import { isOpen, lastMergedAt } from './pullRequests'
+import { issueHierarchy, leavesThatCount } from './rollUp'
 
 export type DriftKind =
   /** A leaf whose PRs all merged, but which is still open in Linear */
@@ -16,7 +15,7 @@ export type DriftKind =
 export type Drift = {
   kind: DriftKind
   issue: LinearWorkItem
-  /** For parents: the leaves under it, and how many of them are finished */
+  /** For parents: the leaves that count, and how many of them are finished */
   leaves?: { total: number; finished: number }
 }
 
@@ -28,10 +27,13 @@ export function isFinished(issue: LinearWorkItem): boolean {
 /**
  * Issues where Linear and GitHub, or a parent and the work under it, disagree about
  * whether the work is finished. They are usually issues somebody forgot to move.
+ *
+ * Sub-issues that never reached `startStage` don't count against a completed parent:
+ * closing the parent closes its scope.
  */
-export function findDrift(issues: readonly LinearWorkItem[]): Drift[] {
-  const nodes = issues.map((issue) => ({ id: issue.workItem.id, parentId: issue.parentId, issue }))
-  const hierarchy = makeHierarchy(nodes)
+export function findDrift(issues: readonly LinearWorkItem[], stages: readonly string[], startStage: string): Drift[] {
+  const hierarchy = issueHierarchy(issues)
+  const nodes = hierarchy.topLevel.flatMap((top) => [top, ...hierarchy.descendantsOf(top)])
   const result: Drift[] = []
 
   for (const node of hierarchy.leaves) {
@@ -46,7 +48,7 @@ export function findDrift(issues: readonly LinearWorkItem[]): Drift[] {
 
   const parents = nodes.filter((node) => hierarchy.childrenOf(node).length > 0)
   for (const node of parents) {
-    const leaves = hierarchy.leavesOf(node)
+    const leaves = leavesThatCount(node, hierarchy, stages, startStage)
     const finished = leaves.filter((leaf) => isFinished(leaf.issue)).length
     const completed = node.issue.linearStateType === 'completed'
     const counts = { total: leaves.length, finished }
