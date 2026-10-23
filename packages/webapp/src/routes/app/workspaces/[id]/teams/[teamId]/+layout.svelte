@@ -66,7 +66,7 @@ $effect(() => {
   <nav class="mt-1 flex flex-wrap items-baseline gap-6 border-b border-gray-200" aria-label="Charts">
     <h1 class="pb-2.5 text-[15px] font-semibold text-gray-600">{data.team.linear_team_name}</h1>
     {#each tabs as tab}
-      {@const current = page.url.pathname === tab.href}
+      {@const current = page.url.pathname === tab.href || (tab.href !== base && page.url.pathname.startsWith(`${tab.href}/`))}
       <a
         href="{tab.href}{search}"
         aria-current={current ? 'page' : undefined}

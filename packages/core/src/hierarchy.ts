@@ -85,13 +85,17 @@ export function makeHierarchy<T extends Node>(items: readonly T[]): Hierarchy<T>
  * leaf finishes. The parent's own state doesn't decide that, so moving a parent to Done
  * early doesn't hide open work, and leaving it open after its work is done doesn't
  * make it look active.
+ *
+ * Nothing happens before `notBefore`, usually when the parent was created: work that started
+ * elsewhere and was moved under the parent later doesn't make the parent older than it is.
  */
 export function rollUpStages(
   parent: StagedItem,
   descendants: readonly StagedItem[],
   leaves: readonly StagedItem[],
   stages: readonly string[],
-  startStage: string
+  startStage: string,
+  notBefore?: Date
 ): Record<string, Date> {
   const startIndex = stages.indexOf(startStage)
   const everyone = [parent, ...descendants]
@@ -110,6 +114,12 @@ export function rollUpStages(
       }
     }
   })
+
+  if (notBefore) {
+    for (const [stage, date] of Object.entries(result)) {
+      if (date.getTime() < notBefore.getTime()) result[stage] = notBefore
+    }
+  }
 
   // Different pieces of work enter the early stages, so keep the timestamps in workflow order
   let next: Date | undefined

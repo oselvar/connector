@@ -15,6 +15,7 @@ function issue(id: string, overrides: Partial<LinearWorkItem> = {}): LinearWorkI
     workItem: { id } as LinearWorkItem['workItem'],
     identifier: id,
     title: id,
+    createdAt: new Date('2000-01-01'),
     currentState: 'In Progress',
     linearState: 'In Progress',
     linearStateType: 'started',

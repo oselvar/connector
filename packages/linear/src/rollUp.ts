@@ -28,7 +28,7 @@ export function leavesThatCount(
 
 /**
  * A parent's work item, rolled up from the work under it: it starts when its first piece of
- * work starts, and finishes when the last leaf that counts finishes. An issue without
+ * work starts, but not before it was created, and finishes when the last leaf that counts finishes. An issue without
  * sub-issues, or a completed parent whose sub-issues never started, is its own work item.
  */
 export function rolledUpWorkItem(
@@ -46,7 +46,8 @@ export function rolledUpWorkItem(
     descendants.map((d) => d.issue.workItem),
     leaves.map((leaf) => leaf.issue.workItem),
     stages,
-    startStage
+    startStage,
+    node.issue.createdAt
   )
   return { id: workItem.id, name: workItem.name, ...rolled } as WorkItem<string>
 }

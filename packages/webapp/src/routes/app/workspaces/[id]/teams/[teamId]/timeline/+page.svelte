@@ -1,6 +1,6 @@
 <script lang="ts">
 import IssuesLoading from '$lib/components/IssuesLoading.svelte'
-import TimelineView from '$lib/components/TimelineView.svelte'
+import TimelineList from '$lib/components/TimelineList.svelte'
 import type { PageData } from './$types'
 
 const { data }: { data: PageData } = $props()
@@ -12,6 +12,6 @@ const { data }: { data: PageData } = $props()
 
 <IssuesLoading issues={data.issues}>
   {#snippet children(_, all)}
-    <TimelineView {all} />
+    <TimelineList {all} />
   {/snippet}
 </IssuesLoading>

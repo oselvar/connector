@@ -83,6 +83,13 @@ describe('rollUpStages', () => {
     expect(rolled.Done).toEqual(new Date('2026-01-05'))
   })
 
+  it("doesn't start before the parent existed, when older work was moved under it", () => {
+    const movedIn = { id: 'old', 'In Progress': new Date('2025-09-02'), Done: new Date('2026-01-03') }
+    const rolled = rollUpStages(parent, [movedIn, done], [movedIn, done], stages, 'In Progress', new Date('2026-01-01'))
+    expect(rolled['In Progress']).toEqual(new Date('2026-01-01'))
+    expect(rolled.Done).toEqual(new Date('2026-01-05'))
+  })
+
   it('skips stages none of its work entered', () => {
     const skipped = { id: 'task-3', 'In Progress': new Date('2026-01-02'), Done: new Date('2026-01-03') }
     const rolled = rollUpStages({ id: 'feature' }, [skipped], [skipped], stages, 'In Progress')

@@ -6,6 +6,7 @@ function issue(id: string, workItem: Record<string, Date>, overrides: Partial<Li
     workItem: { id, name: `https://linear.app/o/issue/${id}`, ...workItem } as LinearWorkItem['workItem'],
     identifier: id,
     title: `Title ${id}`,
+    createdAt: new Date('2000-01-01'),
     currentState: 'In Progress',
     linearState: 'In Progress',
     linearStateType: 'started',

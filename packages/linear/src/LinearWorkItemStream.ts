@@ -13,6 +13,8 @@ export type LinearWorkItem = {
   /** ENG-123 */
   identifier: string
   title: string
+  /** When the issue was created, which for a sub-issue is usually when it was added to its parent */
+  createdAt: Date
   /** The stage the work item is in now: the finish stage once its PRs merged */
   currentState: string
   /** The state the issue is in in Linear, which may lag behind GitHub */
@@ -91,6 +93,7 @@ export function createLinearIssueStream(
               workItem,
               identifier: issue.identifier,
               title: issue.title,
+              createdAt: new Date(issue.createdAt),
               currentState: mergedButOpen ? (finishStage as string) : linearState,
               linearState,
               linearStateType: issue.state.type,
