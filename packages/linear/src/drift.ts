@@ -1,7 +1,7 @@
 import { makeHierarchy } from '@oselvar/core'
 
 import type { LinearWorkItem } from './LinearWorkItemStream'
-import { lastMergedAt } from './pullRequests'
+import { isOpen, lastMergedAt } from './pullRequests'
 
 export type DriftKind =
   /** A leaf whose PRs all merged, but which is still open in Linear */
@@ -39,7 +39,7 @@ export function findDrift(issues: readonly LinearWorkItem[]): Drift[] {
     const completed = issue.linearStateType === 'completed'
     if (!completed && lastMergedAt(issue.pullRequests)) {
       result.push({ kind: 'merged-but-open', issue })
-    } else if (completed && issue.pullRequests.some((pr) => pr.status === 'open' || pr.status === 'draft')) {
+    } else if (completed && issue.pullRequests.some(isOpen)) {
       result.push({ kind: 'done-but-pr-open', issue })
     }
   }

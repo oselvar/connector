@@ -93,7 +93,7 @@ const rows: Row[] = $derived(
       })
       const dots = leaves.flatMap((leaf, lane) =>
         leaf.issue.pullRequests.flatMap((pr) =>
-          pr.mergedAt && pr.mergedAt.getTime() >= windowStart
+          pr.ships && pr.mergedAt && pr.mergedAt.getTime() >= windowStart
             ? [{ cx: x(pr.mergedAt.getTime()), lane, tip: `${pr.label} merged (${leaf.issue.identifier})` }]
             : []
         )

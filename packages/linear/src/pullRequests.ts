@@ -11,7 +11,15 @@ export type PullRequest = {
   label: string
   status: PullRequestStatus
   mergedAt: Date | null
+  /**
+   * Whether merging it ships the issue: it closes the issue rather than just contributing
+   * to it, and it merges into the main branch rather than into another PR's branch
+   */
+  ships: boolean
 }
+
+// Branches that ship when merged into. Others are usually other PRs' branches (stacked PRs).
+const MAIN_BRANCHES = ['main', 'master', 'trunk']
 
 const PULL_REQUEST_URL = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/
 
@@ -32,7 +40,9 @@ export function toPullRequest(attachment: LinearAttachment): PullRequest | null 
       ? (toDate(metadata.mergedAt) ?? toDate(metadata.closedAt) ?? toDate(attachment.updatedAt) ?? null)
       : null
 
-  return { url: match[0], label: `${owner}/${repo}#${number}`, status, mergedAt }
+  const closes = metadata.linkKind === undefined || metadata.linkKind === 'closes'
+  const toMain = typeof metadata.targetBranch !== 'string' || MAIN_BRANCHES.includes(metadata.targetBranch)
+  return { url: match[0], label: `${owner}/${repo}#${number}`, status, mergedAt, ships: closes && toMain }
 }
 
 function toStatus(status: unknown, draft: unknown): PullRequestStatus {
@@ -49,10 +59,18 @@ function toDate(value: unknown): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
-/** When the last of an issue's PRs merged, if at least one merged and none are still open */
+/** Whether a PR that ships the issue is still open */
+export function isOpen(pr: PullRequest): boolean {
+  return pr.ships && (pr.status === 'open' || pr.status === 'draft')
+}
+
+/**
+ * When the last of an issue's shipping PRs merged, if at least one merged and none are still
+ * open. PRs that only contribute to the issue, or merge into another branch, don't count.
+ */
 export function lastMergedAt(pullRequests: readonly PullRequest[]): Date | null {
-  if (pullRequests.some((pr) => pr.status === 'open' || pr.status === 'draft')) return null
-  const merged = pullRequests.flatMap((pr) => (pr.mergedAt ? [pr.mergedAt] : []))
+  if (pullRequests.some(isOpen)) return null
+  const merged = pullRequests.flatMap((pr) => (pr.ships && pr.mergedAt ? [pr.mergedAt] : []))
   if (merged.length === 0) return null
   return new Date(Math.max(...merged.map((date) => date.getTime())))
 }

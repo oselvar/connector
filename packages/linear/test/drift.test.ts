@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { type LinearWorkItem, type PullRequest, findDrift } from '../src/index.js'
 
-const merged: PullRequest = { url: 'u', label: 'o/r#1', status: 'merged', mergedAt: new Date('2026-01-02') }
-const open: PullRequest = { url: 'u', label: 'o/r#2', status: 'open', mergedAt: null }
+const merged: PullRequest = {
+  url: 'u',
+  label: 'o/r#1',
+  status: 'merged',
+  mergedAt: new Date('2026-01-02'),
+  ships: true,
+}
+const open: PullRequest = { url: 'u', label: 'o/r#2', status: 'open', mergedAt: null, ships: true }
 
 function issue(id: string, overrides: Partial<LinearWorkItem> = {}): LinearWorkItem {
   return {

@@ -2,7 +2,7 @@
 import StateName from '$lib/components/StateName.svelte'
 import { formatDuration, plural } from '$lib/format'
 import type { Level } from '$lib/stageRange.svelte'
-import { type Drift, type DriftKind, type LinearWorkItem, findDrift, lastMergedAt } from '@oselvar/linear'
+import { type Drift, type DriftKind, type LinearWorkItem, findDrift, isOpen, lastMergedAt } from '@oselvar/linear'
 
 /**
  * Issues where Linear and GitHub, or a parent and its work, disagree about whether the
@@ -50,12 +50,12 @@ function detail(d: Drift): string {
   switch (d.kind) {
     case 'merged-but-open': {
       const merged = lastMergedAt(d.issue.pullRequests)
-      const labels = d.issue.pullRequests.filter((pr) => pr.status === 'merged').map((pr) => pr.label)
+      const labels = d.issue.pullRequests.filter((pr) => pr.ships && pr.status === 'merged').map((pr) => pr.label)
       return `${labels.join(', ')} merged ${merged ? `${formatDuration((now - merged.getTime()) / 86_400_000)} ago` : ''}`
     }
     case 'done-but-pr-open':
       return `${d.issue.pullRequests
-        .filter((pr) => pr.status === 'open' || pr.status === 'draft')
+        .filter(isOpen)
         .map((pr) => pr.label)
         .join(', ')} still open`
     case 'parent-done-work-open':

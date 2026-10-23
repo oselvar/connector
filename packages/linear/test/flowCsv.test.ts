@@ -27,7 +27,9 @@ describe('formatLinearFlowCsv', () => {
           {
             parentId: 'ENG-1',
             linearState: 'In Review',
-            pullRequests: [{ url: 'u', label: 'o/r#9', status: 'merged', mergedAt: new Date('2026-01-03T00:00:00Z') }],
+            pullRequests: [
+              { url: 'u', label: 'o/r#9', status: 'merged', mergedAt: new Date('2026-01-03T00:00:00Z'), ships: true },
+            ],
           }
         ),
         issue('ENG-3', {}, { parentId: 'nowhere' }),

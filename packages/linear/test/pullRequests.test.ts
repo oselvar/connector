@@ -8,6 +8,7 @@ const pr = (status: PullRequest['status'], mergedAt?: string): PullRequest => ({
   label: 'o/r#1',
   status,
   mergedAt: mergedAt ? new Date(mergedAt) : null,
+  ships: true,
 })
 
 describe('toPullRequest', () => {
@@ -29,7 +30,20 @@ describe('toPullRequest', () => {
       label: 'o/r#7',
       status: 'merged',
       mergedAt: new Date('2026-01-02T00:00:00.000Z'),
+      ships: true,
     })
+  })
+
+  it("doesn't ship PRs that only contribute, or merge into another PR's branch", () => {
+    const attachment = (metadata: Record<string, unknown>) => ({
+      url: 'https://github.com/o/r/pull/7',
+      sourceType: 'github',
+      metadata: { status: 'merged', mergedAt: '2026-01-02T00:00:00.000Z', ...metadata },
+      updatedAt: '',
+    })
+    expect(toPullRequest(attachment({ linkKind: 'closes', targetBranch: 'main' }))?.ships).toBe(true)
+    expect(toPullRequest(attachment({ linkKind: 'contributes', targetBranch: 'main' }))?.ships).toBe(false)
+    expect(toPullRequest(attachment({ linkKind: 'closes', targetBranch: 'aslak/pap-760' }))?.ships).toBe(false)
   })
 
   it('treats PRs linked by hand as unknown', () => {
@@ -43,6 +57,11 @@ describe('lastMergedAt', () => {
     expect(lastMergedAt([pr('merged', '2026-01-02'), pr('merged', '2026-01-05'), pr('closed')])).toEqual(
       new Date('2026-01-05')
     )
+  })
+
+  it('ignores PRs that only contribute', () => {
+    expect(lastMergedAt([{ ...pr('merged', '2026-01-02'), ships: false }])).toBeNull()
+    expect(lastMergedAt([pr('merged', '2026-01-02'), { ...pr('open'), ships: false }])).toEqual(new Date('2026-01-02'))
   })
 
   it('is null while a PR is open, or none merged', () => {

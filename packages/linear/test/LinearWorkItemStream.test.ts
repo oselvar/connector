@@ -229,6 +229,7 @@ describe('LinearWorkItemStream', () => {
         label: 'oselvar/app#12',
         status: 'merged',
         mergedAt: new Date('2026-01-03T00:00:00.000Z'),
+        ships: true,
       },
     ])
   })
