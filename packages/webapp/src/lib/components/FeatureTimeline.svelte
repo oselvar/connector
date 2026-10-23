@@ -31,6 +31,7 @@ const HOUR = 3_600_000
 const targetWidth = 720
 const minPxPerHour = 1.5
 const maxPxPerHour = 14
+const labelRoom = 100
 const scopeHeight = 190
 
 const stages = $derived(team.stages)
@@ -66,13 +67,12 @@ const leaves: Leaf[] = $derived(
 
 // The window runs from when the item was created to today, or to when it finished
 const windowStart = $derived(node ? node.issue.createdAt.getTime() : now)
-const windowEnd = $derived.by(() => {
-  const end = summary?.end?.getTime() ?? now
-  return end + Math.max(6 * HOUR, (end - windowStart) * 0.04)
-})
+const lastDay = $derived(summary?.end?.getTime() ?? now)
 const pxPerHour = $derived(
-  Math.min(maxPxPerHour, Math.max(minPxPerHour, targetWidth / ((windowEnd - windowStart) / HOUR)))
+  Math.min(maxPxPerHour, Math.max(minPxPerHour, (targetWidth - labelRoom) / ((lastDay - windowStart) / HOUR)))
 )
+// Past the end, leave room for the scope chart's labels
+const windowEnd = $derived(lastDay + (labelRoom / pxPerHour) * HOUR)
 const trackWidth = $derived(Math.round(((windowEnd - windowStart) / HOUR) * pxPerHour))
 const x = (time: number) => Math.min(trackWidth, Math.max(0, ((time - windowStart) / HOUR) * pxPerHour))
 
@@ -309,8 +309,7 @@ const fills: Record<Bar['kind'], string> = {
     {#if summary.group === 'finished'}
       {issue.identifier} finished in {formatDuration(openDays)}.
     {:else if growing}
-      {issue.identifier} grew from {scope.atStart} to {summary.total} sub-issues in {formatDuration(openDays)}.{#if rates.added > rates.finished}
-        You’re adding them faster than you finish them.{/if}
+      {issue.identifier} grew from {scope.atStart} to {summary.total} sub-issues in {formatDuration(openDays)}.{#if rates.added > rates.finished}{' '}You’re adding them faster than you finish them.{/if}
     {:else if summary.aging > 0}
       {issue.identifier} has {plural(summary.aging, 'sub-issue', 'sub-issues')} taking longer than usual.
     {:else}

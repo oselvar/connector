@@ -100,8 +100,7 @@ const openFor = (item: ItemSummary) => {
   {/if}
 </p>
 <p class="mt-3.5 max-w-[66ch] text-base leading-normal text-gray-600">
-  The list is in the order we’d tackle it. Stuck work comes first: sub-issues active longer than 85% of yours take{#if limit !== undefined}
-    ({formatDuration(limit)}){/if}. Then items where nothing is moving. Within each group, the item closest to done comes first,
+  The list is in the order we’d tackle it. Stuck work comes first: sub-issues active longer than 85% of yours take{#if limit !== undefined}{' '}({formatDuration(limit)}){/if}. Then items where nothing is moving. Within each group, the item closest to done comes first,
   because finishing it is what gets something shipped.
 </p>
 
